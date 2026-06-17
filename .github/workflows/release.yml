@@ -1,10 +1,5 @@
 name: Release
 
-# Builds the self-contained launcher and publishes a GitHub Release whenever you
-# push a version tag (e.g. `git tag v1.0.0 && git push origin v1.0.0`).
-# It signs the .exe automatically once you've configured Azure Trusted Signing
-# (see the "Code signing" block below); until then it releases an unsigned build.
-
 on:
   push:
     tags: [ 'v*' ]
