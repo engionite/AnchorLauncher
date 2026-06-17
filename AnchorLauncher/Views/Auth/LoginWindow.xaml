@@ -1,0 +1,410 @@
+<Window x:Class="AnchorLauncher.Views.Auth.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:conv="clr-namespace:AnchorLauncher.Converters"
+        WindowStyle="None"
+        AllowsTransparency="False"
+        Background="#0F0F13"
+        WindowStartupLocation="CenterScreen"
+        Width="1280" Height="780"
+        ResizeMode="NoResize"
+        Opacity="0"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0"
+                      ResizeBorderThickness="0"
+                      GlassFrameThickness="0"
+                      UseAeroCaptionButtons="False"/>
+    </WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter          x:Key="BoolToVis"/>
+        <conv:InverseBoolToVisibilityConverter x:Key="InvBoolToVis"/>
+
+        <!-- Auth card button — hover/press handled via triggers, no FocusVisualStyle clutter -->
+        <Style x:Key="AuthCardStyle" TargetType="Button">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment"   Value="Center"/>
+            <Setter Property="Padding"                    Value="0"/>
+            <Setter Property="Cursor"                     Value="Hand"/>
+            <Setter Property="FocusVisualStyle"           Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bg" Background="#232329" CornerRadius="8"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bg" Property="Background" Value="#2C2C35"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bg" Property="Background" Value="#38383F"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="bg" Property="Opacity" Value="0.35"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid x:Name="RootGrid">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="560"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ══════════════════ LEFT: BRANDING PANEL ══════════════════ -->
+        <Border Grid.Column="0" ClipToBounds="True">
+            <Border.Background>
+                <RadialGradientBrush Center="0.5,0.28" RadiusX="0.75" RadiusY="0.52">
+                    <GradientStop Color="#171210" Offset="0"/>
+                    <GradientStop Color="#0D0D11" Offset="1"/>
+                </RadialGradientBrush>
+            </Border.Background>
+
+            <Grid Margin="60,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Content stack — vertically centered, nudged up slightly -->
+                <StackPanel Grid.Row="0" VerticalAlignment="Center" Margin="0,-32,0,0">
+
+                    <!-- App icon -->
+                    <Image Source="pack://application:,,,/Assets/AnchorLauncherIcon.png"
+                           Width="76" Height="76"
+                           HorizontalAlignment="Left"
+                           Stretch="Uniform"
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           Margin="0,0,0,18"/>
+
+                    <!-- Brand label -->
+                    <TextBlock Text="A N C H O R  L A U N C H E R"
+                               FontFamily="Inter, Segoe UI Variable Display, Segoe UI"
+                               FontSize="9" FontWeight="Bold"
+                               Foreground="{StaticResource AccentBrush}"
+                               Margin="0,0,0,22"/>
+
+                    <!-- Main heading -->
+                    <TextBlock Text="Get started."
+                               FontFamily="Inter, Segoe UI Variable Display, Segoe UI"
+                               FontSize="48" FontWeight="ExtraBold"
+                               LineHeight="52"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               Margin="0,0,0,14"/>
+
+                    <!-- Subtext -->
+                    <TextBlock FontFamily="Inter, Segoe UI Variable Display, Segoe UI"
+                               FontSize="14" Foreground="#7A7A82" LineHeight="22">
+                        Sign in to manage your Minecraft accounts,<LineBreak/>
+                        or skip and start exploring.
+                    </TextBlock>
+
+                    <!-- Divider -->
+                    <Border Height="1" Width="200" HorizontalAlignment="Left"
+                            Background="#1EFFFFFF" Margin="0,36,0,28"/>
+
+                    <!-- Feature bullets -->
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Border Width="6" Height="6" CornerRadius="3"
+                                    Background="{StaticResource AccentBrush}"
+                                    VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            <TextBlock Text="Microsoft &amp; Ely.by accounts supported"
+                                       FontFamily="Inter, Segoe UI Variable Display, Segoe UI"
+                                       FontSize="13" Foreground="#7A7A82" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Border Width="6" Height="6" CornerRadius="3"
+                                    Background="{StaticResource AccentBrush}"
+                                    VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            <TextBlock Text="Tokens encrypted with Windows DPAPI"
+                                       FontFamily="Inter, Segoe UI Variable Display, Segoe UI"
+                                       FontSize="13" Foreground="#7A7A82" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="6" Height="6" CornerRadius="3"
+                                    Background="{StaticResource AccentBrush}"
+                                    VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            <TextBlock Text="Sessions restored automatically on launch"
+                                       FontFamily="Inter, Segoe UI Variable Display, Segoe UI"
+                                       FontSize="13" Foreground="#7A7A82" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Step progress indicator (bottom) -->
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,28">
+                    <!-- Step 1 — done -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,14,0">
+                        <Border Width="18" Height="18" CornerRadius="9"
+                                Background="#2A4A2A" VerticalAlignment="Center" Margin="0,0,7,0">
+                            <TextBlock Text="✓" FontSize="9" FontWeight="Bold" Foreground="#5FD35F"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Choose edition"
+                                   FontFamily="Inter, Segoe UI Variable Display, Segoe UI"
+                                   FontSize="11" Foreground="#55555A" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Text="›" FontSize="16" Foreground="#38383F"
+                               VerticalAlignment="Center" Margin="0,0,14,0"/>
+                    <!-- Step 2 — current -->
+                    <StackPanel Orientation="Horizontal">
+                        <Border Width="18" Height="18" CornerRadius="9"
+                                Background="{StaticResource AccentBrush}"
+                                VerticalAlignment="Center" Margin="0,0,7,0">
+                            <TextBlock Text="2" FontSize="9" FontWeight="Bold" Foreground="White"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Sign in"
+                                   FontFamily="Inter, Segoe UI Variable Display, Segoe UI"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ══════════════════ RIGHT: AUTH FORM ══════════════════ -->
+        <Grid Grid.Column="1" Background="#0F0F13">
+
+            <!-- Close button — top-right -->
+            <Button x:Name="BtnClose"
+                    Style="{StaticResource IconButtonStyle}"
+                    Width="36" Height="36"
+                    HorizontalAlignment="Right" VerticalAlignment="Top"
+                    Margin="0,14,16,0"
+                    Panel.ZIndex="1"
+                    WindowChrome.IsHitTestVisibleInChrome="True"
+                    Click="BtnClose_Click"
+                    ToolTip="Continue offline">
+                <Path Data="M 9,9 L 27,27 M 27,9 L 9,27"
+                      Stroke="{StaticResource TextSecondaryBrush}" StrokeThickness="1.5"
+                      StrokeEndLineCap="Round" Width="14" Height="14" Stretch="Uniform"/>
+            </Button>
+
+            <!-- Auth form — vertically centered -->
+            <StackPanel Width="380" VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Margin="0,-16,0,0">
+
+                <!-- Heading -->
+                <TextBlock Text="Sign in"
+                           FontFamily="Inter, Segoe UI Variable Display, Segoe UI"
+                           FontSize="28" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                <TextBlock Text="to continue to Anchor Launcher"
+                           FontFamily="Inter, Segoe UI Variable Display, Segoe UI"
+                           FontSize="14" Foreground="{StaticResource TextSecondaryBrush}"
+                           Margin="0,4,0,0"/>
+
+                <Border Height="1" Background="#232329" Margin="0,22,0,20"/>
+
+                <!-- ══ PROVIDER PICKER (hidden while the Ely.by form is open) ══ -->
+                <StackPanel Visibility="{Binding IsElyFormVisible, Converter={StaticResource InvBoolToVis}}">
+
+                <!-- ── Microsoft card ─────────────────────────────────────── -->
+                <Button Style="{StaticResource AuthCardStyle}"
+                        Command="{Binding SignInMicrosoftCommand}"
+                        Height="66" Margin="0,0,0,10">
+                    <Grid>
+                        <Border Width="3" HorizontalAlignment="Left" CornerRadius="8,0,0,8"
+                                Background="#F35022"/>
+                        <Grid Margin="20,0,16,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Windows logo (4 coloured squares) -->
+                            <Grid Grid.Column="0" Width="20" Height="20"
+                                  VerticalAlignment="Center" Margin="0,0,14,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/><RowDefinition Height="1.5"/><RowDefinition/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/><ColumnDefinition Width="1.5"/><ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <Rectangle Grid.Row="0" Grid.Column="0" Fill="#F35022" RadiusX="1" RadiusY="1"/>
+                                <Rectangle Grid.Row="0" Grid.Column="2" Fill="#81BC06" RadiusX="1" RadiusY="1"/>
+                                <Rectangle Grid.Row="2" Grid.Column="0" Fill="#05A6F0" RadiusX="1" RadiusY="1"/>
+                                <Rectangle Grid.Row="2" Grid.Column="2" Fill="#FFBA08" RadiusX="1" RadiusY="1"/>
+                            </Grid>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="Add Microsoft Account"
+                                           FontFamily="Inter, Segoe UI Variable Display, Segoe UI"
+                                           FontSize="14" FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Xbox Live · Official Minecraft access"
+                                           FontFamily="Inter, Segoe UI Variable Display, Segoe UI"
+                                           FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <Path Grid.Column="2" VerticalAlignment="Center"
+                                  Data="M0,0 L7,10 L0,20" Stroke="#383840" StrokeThickness="1.5"
+                                  StrokeEndLineCap="Round" Width="7" Height="18" Stretch="Uniform"/>
+                        </Grid>
+                    </Grid>
+                </Button>
+
+                <!-- ── Ely.by card ────────────────────────────────────────── -->
+                <Button Style="{StaticResource AuthCardStyle}"
+                        Command="{Binding ShowElyFormCommand}"
+                        Height="66">
+                    <Grid>
+                        <Border Width="3" HorizontalAlignment="Left" CornerRadius="8,0,0,8"
+                                Background="#00B4FF"/>
+                        <Grid Margin="20,0,16,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Ely.by circle logo -->
+                            <Border Grid.Column="0" Width="20" Height="20" CornerRadius="10"
+                                    Background="#00B4FF" VerticalAlignment="Center" Margin="0,0,14,0">
+                                <TextBlock Text="e" FontSize="11" FontWeight="Bold" Foreground="White"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Margin="0,-1,0,0"/>
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="Add Ely.by Account"
+                                           FontFamily="Inter, Segoe UI Variable Display, Segoe UI"
+                                           FontSize="14" FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Alternative accounts · authlib-injector"
+                                           FontFamily="Inter, Segoe UI Variable Display, Segoe UI"
+                                           FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <Path Grid.Column="2" VerticalAlignment="Center"
+                                  Data="M0,0 L7,10 L0,20" Stroke="#383840" StrokeThickness="1.5"
+                                  StrokeEndLineCap="Round" Width="7" Height="18" Stretch="Uniform"/>
+                        </Grid>
+                    </Grid>
+                </Button>
+
+                <!-- ── "or" divider ───────────────────────────────────────── -->
+                <Grid Margin="0,22,0,18">
+                    <Border VerticalAlignment="Center" Height="1" Background="#232329"/>
+                    <Border HorizontalAlignment="Center" Background="#0F0F13" Padding="14,0">
+                        <TextBlock Text="or"
+                                   FontFamily="Inter, Segoe UI Variable Display, Segoe UI"
+                                   FontSize="12" Foreground="#383840"/>
+                    </Border>
+                </Grid>
+
+                <!-- ── Offline skip button ───────────────────────────────── -->
+                <Button Content="Continue Offline"
+                        Style="{StaticResource GhostButtonStyle}"
+                        Height="40" FontSize="13"
+                        Command="{Binding SkipCommand}"/>
+
+                <!-- ── Device code panel (Microsoft flow) ─────────────────── -->
+                <Border Margin="0,18,0,0" Background="#1A1A1E" CornerRadius="8" Padding="16,14"
+                        Visibility="{Binding IsDeviceCodeVisible, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <TextBlock Text="Complete sign-in in your browser"
+                                   FontFamily="Inter, Segoe UI Variable Display, Segoe UI"
+                                   FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   Margin="0,0,0,8"/>
+                        <TextBlock Text="Go to this address:"
+                                   FontFamily="Inter, Segoe UI Variable Display, Segoe UI"
+                                   FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
+                                   Margin="0,0,0,4"/>
+                        <Border Background="#232329" CornerRadius="4" Padding="8,5" Margin="0,0,0,10">
+                            <TextBlock Text="{Binding DeviceCodeUrl}"
+                                       FontFamily="Consolas, Courier New"
+                                       FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
+                                       TextWrapping="Wrap"/>
+                        </Border>
+                        <TextBlock Text="Then enter this code:"
+                                   FontFamily="Inter, Segoe UI Variable Display, Segoe UI"
+                                   FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
+                                   Margin="0,0,0,6"/>
+                        <Border Background="#232329" CornerRadius="6" Padding="12,8" Margin="0,0,0,10">
+                            <TextBlock Text="{Binding DeviceCode}"
+                                       FontFamily="Consolas, Courier New"
+                                       FontSize="22" FontWeight="Bold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       HorizontalAlignment="Center" TextAlignment="Center"/>
+                        </Border>
+                        <Button Content="Cancel sign-in"
+                                Style="{StaticResource GhostButtonStyle}"
+                                Height="30" FontSize="11"
+                                Command="{Binding CancelAuthCommand}"/>
+                    </StackPanel>
+                </Border>
+                </StackPanel>
+                <!-- ══ end provider picker ══ -->
+
+                <!-- ══ ELY.BY DIRECT (YGGDRASIL) SIGN-IN FORM ══ -->
+                <StackPanel Visibility="{Binding IsElyFormVisible, Converter={StaticResource BoolToVis}}">
+                    <Button HorizontalAlignment="Left" Style="{StaticResource GhostButtonStyle}"
+                            Height="28" Padding="10,0" FontSize="11" Margin="0,0,0,14"
+                            Content="← Back" Command="{Binding BackToProvidersCommand}"/>
+
+                    <TextBlock Text="EMAIL OR USERNAME"
+                               FontFamily="Inter, Segoe UI Variable Display, Segoe UI"
+                               FontSize="10" FontWeight="SemiBold" Foreground="#55555A" Margin="0,0,0,6"/>
+                    <TextBox Style="{StaticResource AnchorTextBoxStyle}" Height="40"
+                             Foreground="#FFFFFF" CaretBrush="#FFFFFF"
+                             Text="{Binding ElyUsername, UpdateSourceTrigger=PropertyChanged}"/>
+
+                    <TextBlock Text="PASSWORD"
+                               FontFamily="Inter, Segoe UI Variable Display, Segoe UI"
+                               FontSize="10" FontWeight="SemiBold" Foreground="#55555A" Margin="0,14,0,6"/>
+                    <PasswordBox x:Name="ElyPasswordBox" Style="{StaticResource AnchorPasswordBoxStyle}"
+                                 Height="40" KeyDown="ElyPassword_KeyDown"/>
+
+                    <StackPanel Visibility="{Binding IsTwoFactorRequired, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="TWO-FACTOR CODE"
+                                   FontFamily="Inter, Segoe UI Variable Display, Segoe UI"
+                                   FontSize="10" FontWeight="SemiBold" Foreground="#55555A" Margin="0,14,0,6"/>
+                        <TextBox Style="{StaticResource AnchorTextBoxStyle}" Height="40"
+                                 Foreground="#FFFFFF" CaretBrush="#FFFFFF"
+                                 Text="{Binding ElyTwoFactor, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+
+                    <TextBlock Text="{Binding ElyError}"
+                               FontFamily="Inter, Segoe UI Variable Display, Segoe UI"
+                               FontSize="11" Foreground="{StaticResource ErrorBrush}"
+                               TextWrapping="Wrap" Margin="0,10,0,0"/>
+
+                    <Button Content="Sign In" Style="{StaticResource PrimaryButtonStyle}"
+                            Height="42" FontSize="13" Margin="0,14,0,0"
+                            Click="ElySignIn_Click"/>
+                </StackPanel>
+
+                <!-- ── Progress bar ───────────────────────────────────────── -->
+                <ProgressBar Style="{StaticResource AnchorProgressBarStyle}"
+                             IsIndeterminate="True" Height="2" Margin="0,18,0,0"
+                             Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"/>
+
+                <!-- ── Status message ─────────────────────────────────────── -->
+                <TextBlock Text="{Binding StatusMessage}"
+                           FontFamily="Inter, Segoe UI Variable Display, Segoe UI"
+                           FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
+                           Margin="0,8,0,0" TextAlignment="Center"
+                           TextWrapping="Wrap" MaxWidth="360"/>
+
+            </StackPanel>
+        </Grid>
+
+    </Grid>
+</Window>

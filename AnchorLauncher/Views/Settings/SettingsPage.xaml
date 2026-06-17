@@ -1,0 +1,669 @@
+<Page x:Class="AnchorLauncher.Views.Settings.SettingsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:vm="clr-namespace:AnchorLauncher.ViewModels"
+      xmlns:conv="clr-namespace:AnchorLauncher.Converters"
+      xmlns:loc="clr-namespace:AnchorLauncher.Services.Platform"
+      Background="{DynamicResource AppBackgroundBrush}"
+      Title="Settings"
+      TextOptions.TextFormattingMode="Display"
+      TextOptions.TextRenderingMode="ClearType">
+
+    <Page.DataContext>
+        <vm:SettingsViewModel/>
+    </Page.DataContext>
+
+    <Page.Resources>
+        <BooleanToVisibilityConverter        x:Key="BoolToVis"/>
+        <conv:EnumToBooleanConverter         x:Key="EnumToBool"/>
+        <conv:ThemeModeToStringConverter     x:Key="ThemeName"/>
+        <conv:ProxyModeToStringConverter     x:Key="ProxyName"/>
+        <conv:ElyPatchModeToStringConverter  x:Key="ElyPatchName"/>
+        <conv:AnimationSpeedToStringConverter x:Key="AnimSpeedName"/>
+        <conv:CountToVisibilityConverter     x:Key="CountToVis"/>
+
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
+            <Setter Property="FontSize"   Value="{StaticResource FontSizeLG}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="Margin"     Value="0,0,0,14"/>
+        </Style>
+
+        <Style x:Key="SectionLabel" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
+            <Setter Property="FontSize"   Value="10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextDisabledBrush}"/>
+            <Setter Property="Margin"     Value="0,0,0,8"/>
+        </Style>
+
+        <Style x:Key="DarkCheckBox" TargetType="CheckBox">
+            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
+            <Setter Property="FontSize"   Value="13"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="Cursor"     Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <StackPanel Orientation="Horizontal" Background="Transparent">
+                            <Border x:Name="box" Width="18" Height="18" CornerRadius="4"
+                                    Background="{StaticResource Surface1Brush}"
+                                    BorderBrush="{StaticResource Surface2Brush}" BorderThickness="1"
+                                    VerticalAlignment="Center" Margin="0,0,8,0">
+                                <Path x:Name="check" Data="M 4,9 L 8,13 L 14,5"
+                                      Stroke="White" StrokeThickness="2"
+                                      StrokeEndLineCap="Round" StrokeStartLineCap="Round"
+                                      Stretch="Uniform" Margin="3" Visibility="Collapsed"/>
+                            </Border>
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="box"   Property="Background" Value="{StaticResource AccentBrush}"/>
+                                <Setter TargetName="box"   Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                <Setter TargetName="check" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Dark radio button -->
+        <Style x:Key="DarkRadio" TargetType="RadioButton">
+            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
+            <Setter Property="FontSize"   Value="13"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="Cursor"     Value="Hand"/>
+            <Setter Property="Margin"     Value="0,0,0,9"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <StackPanel Orientation="Horizontal" Background="Transparent">
+                            <Border x:Name="ring" Width="18" Height="18" CornerRadius="9"
+                                    Background="{StaticResource Surface1Brush}"
+                                    BorderBrush="{StaticResource Surface2Brush}" BorderThickness="1"
+                                    VerticalAlignment="Center" Margin="0,0,8,0">
+                                <Ellipse x:Name="dot" Width="8" Height="8" Fill="White" Visibility="Collapsed"/>
+                            </Border>
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="ring" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                <Setter TargetName="dot"  Property="Fill" Value="{StaticResource AccentBrush}"/>
+                                <Setter TargetName="dot"  Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Setting row: label + description on the left, control on the right -->
+        <Style x:Key="RowLabel" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
+            <Setter Property="FontSize"   Value="13"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- Launch-mode premium radio card -->
+        <Style x:Key="PerfCard" TargetType="RadioButton">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="card" CornerRadius="8" Padding="16,14"
+                                Background="{StaticResource Surface1Brush}"
+                                BorderBrush="{StaticResource Surface2Brush}" BorderThickness="1">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="card" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                <Setter TargetName="card" Property="Background"  Value="{StaticResource AccentMutedBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="card" Property="BorderBrush" Value="{StaticResource AccentHoverBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
+
+    <Grid Margin="32,28,32,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="{Binding [settings_title], Source={x:Static loc:Loc.I}}"
+                       FontFamily="{StaticResource PrimaryFont}" FontSize="{StaticResource FontSize2XL}"
+                       FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+            <TextBlock Text="{Binding [settings_sub], Source={x:Static loc:Loc.I}}"
+                       FontFamily="{StaticResource PrimaryFont}" FontSize="{StaticResource FontSizeMD}"
+                       Foreground="{StaticResource TextSecondaryBrush}" Margin="0,3,0,0"/>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" Style="{StaticResource AnchorScrollViewerStyle}">
+            <StackPanel MaxWidth="640" HorizontalAlignment="Left" Margin="0,0,14,28">
+
+                <!-- ═══════════ GENERAL ═══════════ -->
+                <TextBlock Text="{Binding [general], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionHeader}"/>
+
+                <TextBlock Text="{Binding [instance_sorting], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionLabel}"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                    <RadioButton GroupName="sort" Style="{StaticResource DarkRadio}" Margin="0,0,24,0" Content="{Binding [by_last_played], Source={x:Static loc:Loc.I}}"
+                                 IsChecked="{Binding InstanceSort, Converter={StaticResource EnumToBool}, ConverterParameter=LastPlayed}"/>
+                    <RadioButton GroupName="sort" Style="{StaticResource DarkRadio}" Content="{Binding [by_name], Source={x:Static loc:Loc.I}}"
+                                 IsChecked="{Binding InstanceSort, Converter={StaticResource EnumToBool}, ConverterParameter=Name}"/>
+                </StackPanel>
+
+                <TextBlock Text="{Binding [instance_display], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionLabel}"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                    <RadioButton GroupName="view" Style="{StaticResource DarkRadio}" Margin="0,0,24,0" Content="{Binding [grid_view], Source={x:Static loc:Loc.I}}"
+                                 IsChecked="{Binding InstanceView, Converter={StaticResource EnumToBool}, ConverterParameter=Grid}"/>
+                    <RadioButton GroupName="view" Style="{StaticResource DarkRadio}" Content="{Binding [list_view], Source={x:Static loc:Loc.I}}"
+                                 IsChecked="{Binding InstanceView, Converter={StaticResource EnumToBool}, ConverterParameter=List}"/>
+                </StackPanel>
+
+                <CheckBox Style="{StaticResource DarkCheckBox}" Margin="0,0,0,9"
+                          Content="{Binding [show_playtime], Source={x:Static loc:Loc.I}}" IsChecked="{Binding ShowPlaytimeOnCards}"/>
+                <CheckBox Style="{StaticResource DarkCheckBox}" Margin="0,0,0,16"
+                          Content="{Binding [record_playtime], Source={x:Static loc:Loc.I}}" IsChecked="{Binding RecordPlaytime}"/>
+
+                <TextBlock Text="{Binding [on_launch], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionLabel}"/>
+                <StackPanel Margin="0,0,0,12">
+                    <RadioButton GroupName="onlaunch" Style="{StaticResource DarkRadio}" Content="{Binding [keep_open], Source={x:Static loc:Loc.I}}"
+                                 IsChecked="{Binding OnLaunchAction, Converter={StaticResource EnumToBool}, ConverterParameter=KeepOpen}"/>
+                    <RadioButton GroupName="onlaunch" Style="{StaticResource DarkRadio}" Content="{Binding [minimize_launcher], Source={x:Static loc:Loc.I}}"
+                                 IsChecked="{Binding OnLaunchAction, Converter={StaticResource EnumToBool}, ConverterParameter=Minimize}"/>
+                    <RadioButton GroupName="onlaunch" Style="{StaticResource DarkRadio}" Content="{Binding [close_launcher], Source={x:Static loc:Loc.I}}"
+                                 IsChecked="{Binding OnLaunchAction, Converter={StaticResource EnumToBool}, ConverterParameter=Close}"/>
+                </StackPanel>
+
+                <TextBlock Text="{Binding [on_game_close], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionLabel}"/>
+                <StackPanel Margin="0,0,0,22">
+                    <RadioButton GroupName="onclose" Style="{StaticResource DarkRadio}" Content="{Binding [reopen], Source={x:Static loc:Loc.I}}"
+                                 IsChecked="{Binding OnGameCloseAction, Converter={StaticResource EnumToBool}, ConverterParameter=Reopen}"/>
+                    <RadioButton GroupName="onclose" Style="{StaticResource DarkRadio}" Content="{Binding [keep_minimized], Source={x:Static loc:Loc.I}}"
+                                 IsChecked="{Binding OnGameCloseAction, Converter={StaticResource EnumToBool}, ConverterParameter=KeepMinimized}"/>
+                    <RadioButton GroupName="onclose" Style="{StaticResource DarkRadio}" Content="{Binding [do_nothing], Source={x:Static loc:Loc.I}}"
+                                 IsChecked="{Binding OnGameCloseAction, Converter={StaticResource EnumToBool}, ConverterParameter=Nothing}"/>
+                </StackPanel>
+
+                <!-- ═══════════ APPEARANCE ═══════════ -->
+                <Border Height="1" Background="{StaticResource Surface2Brush}" Margin="0,0,0,20"/>
+                <TextBlock Text="{Binding [appearance], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionHeader}"/>
+
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="{Binding [ap_theme], Source={x:Static loc:Loc.I}}" Style="{StaticResource RowLabel}"/>
+                        <TextBlock Text="{Binding [ap_theme_hint], Source={x:Static loc:Loc.I}}" FontSize="11"
+                                   Foreground="{StaticResource TextSecondaryBrush}" FontFamily="{StaticResource PrimaryFont}"/>
+                    </StackPanel>
+                    <ComboBox Grid.Column="1" Style="{StaticResource AnchorComboBoxStyle}" Width="180"
+                              ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}">
+                        <ComboBox.ItemTemplate><DataTemplate>
+                            <TextBlock Text="{Binding Converter={StaticResource ThemeName}}"/>
+                        </DataTemplate></ComboBox.ItemTemplate>
+                    </ComboBox>
+                </Grid>
+
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="{Binding [ap_uiscale], Source={x:Static loc:Loc.I}}" Style="{StaticResource RowLabel}"/>
+                    <ComboBox Grid.Column="1" Style="{StaticResource AnchorComboBoxStyle}" Width="180"
+                              ItemsSource="{Binding UiScaleOptions}" SelectedItem="{Binding UiScalePercent}">
+                        <ComboBox.ItemTemplate><DataTemplate>
+                            <TextBlock Text="{Binding StringFormat={}{0}%}"/>
+                        </DataTemplate></ComboBox.ItemTemplate>
+                    </ComboBox>
+                </Grid>
+
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="{Binding [ap_cfont], Source={x:Static loc:Loc.I}}" Style="{StaticResource RowLabel}"/>
+                    <ComboBox Grid.Column="1" Style="{StaticResource AnchorComboBoxStyle}" Width="180"
+                              ItemsSource="{Binding ConsoleFonts}" SelectedItem="{Binding ConsoleFont}"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="{Binding [ap_cfontsize], Source={x:Static loc:Loc.I}}" Style="{StaticResource RowLabel}"/>
+                    <ComboBox Grid.Column="1" Style="{StaticResource AnchorComboBoxStyle}" Width="180"
+                              ItemsSource="{Binding ConsoleFontSizes}" SelectedItem="{Binding ConsoleFontSize}"/>
+                </Grid>
+
+                <!-- Live preview of the console/log font (this font applies to the launch console, not the launcher UI) -->
+                <Border CornerRadius="6" Background="#0C0C0F" BorderBrush="{StaticResource Surface2Brush}" BorderThickness="1"
+                        Padding="12,9" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="{Binding [ap_cpreview], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionLabel}" Margin="0,0,0,6"/>
+                        <TextBlock Text="[12:00:00] [Client thread/INFO]: Loaded 437 advancements"
+                                   FontFamily="{Binding ConsoleFont}" FontSize="{Binding ConsoleFontSize}"
+                                   Foreground="#B8C0CC" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text="[12:00:01] [Render thread/WARN]: Missing texture anchor:demo"
+                                   FontFamily="{Binding ConsoleFont}" FontSize="{Binding ConsoleFontSize}"
+                                   Foreground="#E0B341" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="{Binding [ap_animspeed], Source={x:Static loc:Loc.I}}" Style="{StaticResource RowLabel}"/>
+                    <ComboBox Grid.Column="1" Style="{StaticResource AnchorComboBoxStyle}" Width="180"
+                              ItemsSource="{Binding AnimationSpeeds}" SelectedItem="{Binding AnimationSpeed}">
+                        <ComboBox.ItemTemplate><DataTemplate>
+                            <TextBlock Text="{Binding Converter={StaticResource AnimSpeedName}}"/>
+                        </DataTemplate></ComboBox.ItemTemplate>
+                    </ComboBox>
+                </Grid>
+
+                <CheckBox Style="{StaticResource DarkCheckBox}" Margin="0,0,0,9"
+                          Content="{Binding [ap_showanim], Source={x:Static loc:Loc.I}}" IsChecked="{Binding ShowAnimations}"/>
+                <CheckBox Style="{StaticResource DarkCheckBox}" Margin="0,0,0,9"
+                          Content="{Binding [ap_shownames], Source={x:Static loc:Loc.I}}" IsChecked="{Binding ShowInstanceNames}"/>
+                <CheckBox Style="{StaticResource DarkCheckBox}" Margin="0,0,0,9"
+                          Content="{Binding [ap_mintray], Source={x:Static loc:Loc.I}}" IsChecked="{Binding MinimizeToTray}"/>
+                <CheckBox Style="{StaticResource DarkCheckBox}" Margin="0,0,0,9"
+                          Content="{Binding [ap_startwin], Source={x:Static loc:Loc.I}}" IsChecked="{Binding StartWithWindows}"/>
+                <CheckBox Style="{StaticResource DarkCheckBox}" Margin="0,0,0,22"
+                          Content="{Binding [ap_checkupd], Source={x:Static loc:Loc.I}}" IsChecked="{Binding CheckUpdatesOnStartup}"/>
+
+                <!-- ═══════════ MINECRAFT LAUNCH ═══════════ -->
+                <Border Height="1" Background="{StaticResource Surface2Brush}" Margin="0,0,0,20"/>
+                <TextBlock Text="{Binding [mc_launch], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionHeader}"/>
+
+                <TextBlock Text="{Binding [sl_launchmode], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionLabel}"/>
+                <Grid Margin="0,0,0,18">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <RadioButton Grid.Column="0" GroupName="perf" Style="{StaticResource PerfCard}"
+                                 IsChecked="{Binding LaunchPerfMode, Converter={StaticResource EnumToBool}, ConverterParameter=Standard}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding [sl_standard], Source={x:Static loc:Loc.I}}" FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                            <TextBlock Text="{Binding [sl_standard_desc], Source={x:Static loc:Loc.I}}"
+                                       FontFamily="{StaticResource PrimaryFont}" FontSize="11"
+                                       Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton Grid.Column="2" GroupName="perf" Style="{StaticResource PerfCard}"
+                                 IsChecked="{Binding LaunchPerfMode, Converter={StaticResource EnumToBool}, ConverterParameter=Optimized}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding [sl_optimized], Source={x:Static loc:Loc.I}}" FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                            <TextBlock Text="{Binding [sl_optimized_desc], Source={x:Static loc:Loc.I}}"
+                                       FontFamily="{StaticResource PrimaryFont}" FontSize="11"
+                                       Foreground="{StaticResource TextSecondaryBrush}" Margin="0,5,0,4"/>
+                            <TextBlock Text="{Binding OptimizedFlagsText}"
+                                       FontFamily="Consolas, Cascadia Mono" FontSize="9.5"
+                                       Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </RadioButton>
+                </Grid>
+
+                <TextBlock Text="{Binding [sl_memalloc], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionLabel}"/>
+                <Slider Style="{StaticResource AnchorSliderStyle}"
+                        Minimum="512" Maximum="16384" TickFrequency="512" IsSnapToTickEnabled="True"
+                        Value="{Binding MemoryMB}"/>
+                <TextBlock Text="{Binding MemoryMB, StringFormat={}{0} MB}"
+                           FontFamily="{StaticResource PrimaryFont}" FontSize="13"
+                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,4,0,18"/>
+
+                <TextBlock Text="{Binding [sl_winres], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionLabel}"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                    <TextBox Style="{StaticResource AnchorTextBoxStyle}" Width="90" Height="36"
+                             Foreground="#FFFFFF" CaretBrush="#FFFFFF"
+                             Text="{Binding WindowWidth, UpdateSourceTrigger=PropertyChanged}"/>
+                    <TextBlock Text="×" VerticalAlignment="Center" Margin="10,0"
+                               Foreground="{StaticResource TextSecondaryBrush}" FontSize="14"/>
+                    <TextBox Style="{StaticResource AnchorTextBoxStyle}" Width="90" Height="36"
+                             Foreground="#FFFFFF" CaretBrush="#FFFFFF"
+                             Text="{Binding WindowHeight, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+
+                <CheckBox Style="{StaticResource DarkCheckBox}" Content="{Binding [sl_fullscreen], Source={x:Static loc:Loc.I}}"
+                          IsChecked="{Binding Fullscreen}" Margin="0,0,0,14"/>
+                <!-- Launch/close window behavior now lives in the General section;
+                     console visibility lives in the Minecraft section. -->
+
+                <TextBlock Text="{Binding [sl_jvmargs], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionLabel}"/>
+                <TextBox Style="{StaticResource AnchorTextBoxStyle}" Height="64"
+                         Foreground="#FFFFFF" CaretBrush="#FFFFFF"
+                         AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top"
+                         Text="{Binding JvmArgs, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14"/>
+
+                <TextBlock Text="{Binding [sl_prelaunch], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionLabel}"/>
+                <Grid Margin="0,0,0,22">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0" Style="{StaticResource AnchorTextBoxStyle}" Height="36"
+                             Foreground="#FFFFFF" CaretBrush="#FFFFFF"
+                             Text="{Binding PreLaunchScript, UpdateSourceTrigger=PropertyChanged}"/>
+                    <Button Grid.Column="1" Content="{Binding [common_browse], Source={x:Static loc:Loc.I}}" Style="{StaticResource GhostButtonStyle}"
+                            Height="36" Padding="14,0" Margin="8,0,0,0" Click="BrowseScript_Click"/>
+                </Grid>
+
+                <!-- ═══════════ JAVA ═══════════ -->
+                <Border Height="1" Background="{StaticResource Surface2Brush}" Margin="0,0,0,20"/>
+                <TextBlock Text="{Binding [java], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionHeader}"/>
+
+                <TextBlock Text="{Binding [sj_javaexe], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionLabel}"/>
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0" Style="{StaticResource AnchorTextBoxStyle}" Height="36"
+                             Foreground="#FFFFFF" CaretBrush="#FFFFFF"
+                             Text="{Binding JavaPath, UpdateSourceTrigger=PropertyChanged}"/>
+                    <Button Grid.Column="1" Content="{Binding [common_browse], Source={x:Static loc:Loc.I}}" Style="{StaticResource GhostButtonStyle}"
+                            Height="36" Padding="14,0" Margin="8,0,0,0" Click="BrowseJava_Click"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,8">
+                    <TextBlock Text="{Binding [sj_detected], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionLabel}" VerticalAlignment="Center"/>
+                    <Button Content="{Binding [sj_rescan], Source={x:Static loc:Loc.I}}" Style="{StaticResource GhostButtonStyle}" HorizontalAlignment="Right"
+                            Height="28" Padding="12,0" FontSize="11" Command="{Binding RefreshJavasCommand}"/>
+                </Grid>
+                <Border Background="{StaticResource Surface1Brush}" CornerRadius="8" Padding="6" Margin="0,0,0,22" MinHeight="50">
+                    <Grid>
+                        <TextBlock Text="{Binding [sj_nojava], Source={x:Static loc:Loc.I}}"
+                                   FontFamily="{StaticResource PrimaryFont}" FontSize="12"
+                                   Foreground="{StaticResource TextDisabledBrush}" TextWrapping="Wrap" Margin="8"
+                                   VerticalAlignment="Center" HorizontalAlignment="Center"
+                                   Visibility="{Binding DetectedJavas.Count, Converter={StaticResource CountToVis}}"/>
+                        <ItemsControl ItemsSource="{Binding DetectedJavas}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="8,6">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" CornerRadius="4" Padding="7,2" Background="{StaticResource AccentMutedBrush}" VerticalAlignment="Center" Margin="0,0,10,0">
+                                            <TextBlock Text="{Binding Major, StringFormat=Java {0}}" FontFamily="{StaticResource PrimaryFont}"
+                                                       FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}"/>
+                                        </Border>
+                                        <TextBlock Grid.Column="1" Text="{Binding Path}" VerticalAlignment="Center"
+                                                   FontFamily="Consolas, Cascadia Mono" FontSize="11"
+                                                   Foreground="{StaticResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
+                                        <Button Grid.Column="2" Content="{Binding [sj_setdefault], Source={x:Static loc:Loc.I}}" Style="{StaticResource GhostButtonStyle}"
+                                                Height="26" Padding="10,0" FontSize="11"
+                                                Command="{Binding DataContext.SetJavaDefaultCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                CommandParameter="{Binding}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Grid>
+                </Border>
+
+                <!-- ═══════════ NETWORK ═══════════ -->
+                <Border Height="1" Background="{StaticResource Surface2Brush}" Margin="0,0,0,20"/>
+                <TextBlock Text="{Binding [network], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionHeader}"/>
+
+                <TextBlock Text="{Binding [sn_threads], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionLabel}"/>
+                <Slider Style="{StaticResource AnchorSliderStyle}"
+                        Minimum="4" Maximum="32" TickFrequency="1" IsSnapToTickEnabled="True"
+                        Value="{Binding DownloadThreads}"/>
+                <TextBlock Text="{Binding DownloadThreads, StringFormat={}{0} concurrent downloads}"
+                           FontFamily="{StaticResource PrimaryFont}" FontSize="13"
+                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,4,0,14"/>
+
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                    <CheckBox Style="{StaticResource DarkCheckBox}" Content="{Binding [sn_retry], Source={x:Static loc:Loc.I}}"
+                              IsChecked="{Binding RetryDownloads}" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                    <TextBlock Text="{Binding [sn_attempts], Source={x:Static loc:Loc.I}}" Style="{StaticResource RowLabel}" Margin="0,0,8,0"/>
+                    <TextBox Style="{StaticResource AnchorTextBoxStyle}" Width="60" Height="34"
+                             Foreground="#FFFFFF" CaretBrush="#FFFFFF"
+                             Text="{Binding RetryAttempts, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                    <TextBlock Text="{Binding [sn_timeout], Source={x:Static loc:Loc.I}}" Style="{StaticResource RowLabel}" Margin="0,0,8,0"/>
+                    <TextBox Style="{StaticResource AnchorTextBoxStyle}" Width="70" Height="34"
+                             Foreground="#FFFFFF" CaretBrush="#FFFFFF"
+                             Text="{Binding HttpTimeoutSeconds, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+
+                <TextBlock Text="{Binding [sn_proxy], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionLabel}"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,22">
+                    <ComboBox Style="{StaticResource AnchorComboBoxStyle}" Width="150"
+                              ItemsSource="{Binding ProxyModes}" SelectedItem="{Binding ProxyMode}">
+                        <ComboBox.ItemTemplate><DataTemplate>
+                            <TextBlock Text="{Binding Converter={StaticResource ProxyName}}"/>
+                        </DataTemplate></ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <StackPanel Orientation="Horizontal" Margin="10,0,0,0">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ProxyMode}" Value="None">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                        <TextBox Style="{StaticResource AnchorTextBoxStyle}" Width="200" Height="36"
+                                 Foreground="#FFFFFF" CaretBrush="#FFFFFF" ToolTip="Host"
+                                 Text="{Binding ProxyHost, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBlock Text=":" VerticalAlignment="Center" Margin="6,0"
+                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <TextBox Style="{StaticResource AnchorTextBoxStyle}" Width="80" Height="36"
+                                 Foreground="#FFFFFF" CaretBrush="#FFFFFF" ToolTip="Port"
+                                 Text="{Binding ProxyPort, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- ═══════════ CLOUD SYNC ═══════════ -->
+                <Border Height="1" Background="{StaticResource Surface2Brush}" Margin="0,0,0,20"/>
+                <TextBlock Text="{Binding [cloud_sync], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionHeader}"/>
+                <TextBlock Text="{Binding [sc_desc], Source={x:Static loc:Loc.I}}"
+                           FontFamily="{StaticResource PrimaryFont}" FontSize="12"
+                           Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <ComboBox Style="{StaticResource AnchorComboBoxStyle}" Width="150"
+                              ItemsSource="{Binding CloudProviders}" SelectedItem="{Binding CloudProvider}"/>
+                    <TextBox Style="{StaticResource AnchorTextBoxStyle}" Width="280" Height="36" Margin="10,0,0,0"
+                             Foreground="#FFFFFF" CaretBrush="#FFFFFF"
+                             Text="{Binding CloudCustomPath, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="Custom sync folder (used when provider is Custom)"/>
+                    <Button Content="{Binding [common_browse], Source={x:Static loc:Loc.I}}" Style="{StaticResource GhostButtonStyle}"
+                            Height="36" Padding="14,0" Margin="8,0,0,0" Click="BrowseCloudPath_Click"/>
+                </StackPanel>
+
+                <WrapPanel Margin="0,2,0,12">
+                    <CheckBox Style="{StaticResource DarkCheckBox}" Content="{Binding [sc_worlds], Source={x:Static loc:Loc.I}}" IsChecked="{Binding SyncWorlds}" Margin="0,0,18,8"/>
+                    <CheckBox Style="{StaticResource DarkCheckBox}" Content="{Binding [sc_screenshots], Source={x:Static loc:Loc.I}}" IsChecked="{Binding SyncScreenshots}" Margin="0,0,18,8"/>
+                    <CheckBox Style="{StaticResource DarkCheckBox}" Content="options.txt" IsChecked="{Binding SyncOptions}" Margin="0,0,18,8"/>
+                    <CheckBox Style="{StaticResource DarkCheckBox}" Content="{Binding [sc_controls], Source={x:Static loc:Loc.I}}" IsChecked="{Binding SyncControls}" Margin="0,0,18,8"/>
+                </WrapPanel>
+                <CheckBox Style="{StaticResource DarkCheckBox}" Content="{Binding [sc_autosync], Source={x:Static loc:Loc.I}}"
+                          IsChecked="{Binding AutoSyncOnClose}" Margin="0,0,0,12"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,22">
+                    <Button Content="{Binding [sc_syncnow], Source={x:Static loc:Loc.I}}" Style="{StaticResource GhostButtonStyle}"
+                            Height="36" Padding="18,0" Command="{Binding SyncNowCommand}"/>
+                    <ProgressBar Style="{StaticResource AnchorProgressBarStyle}" Width="100" Height="3"
+                                 IsIndeterminate="True" Margin="12,0,0,0" VerticalAlignment="Center"
+                                 Visibility="{Binding IsSyncing, Converter={StaticResource BoolToVis}}"/>
+                    <TextBlock Text="{Binding SyncStatus}" VerticalAlignment="Center" Margin="12,0,0,0"
+                               FontFamily="{StaticResource PrimaryFont}" FontSize="12"
+                               Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" MaxWidth="300"/>
+                </StackPanel>
+
+                <!-- ═══════════ MINECRAFT ═══════════ -->
+                <Border Height="1" Background="{StaticResource Surface2Brush}" Margin="0,0,0,20"/>
+                <TextBlock Text="{Binding [minecraft], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionHeader}"/>
+
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="{Binding [sm_elypatch], Source={x:Static loc:Loc.I}}" Style="{StaticResource RowLabel}"/>
+                        <TextBlock Text="{Binding [sm_elypatch_hint], Source={x:Static loc:Loc.I}}" FontSize="11"
+                                   Foreground="{StaticResource TextSecondaryBrush}" FontFamily="{StaticResource PrimaryFont}"/>
+                    </StackPanel>
+                    <ComboBox Grid.Column="1" Style="{StaticResource AnchorComboBoxStyle}" Width="220"
+                              ItemsSource="{Binding ElyPatchModes}" SelectedItem="{Binding ElyPatchMode}">
+                        <ComboBox.ItemTemplate><DataTemplate>
+                            <TextBlock Text="{Binding Converter={StaticResource ElyPatchName}}"/>
+                        </DataTemplate></ComboBox.ItemTemplate>
+                    </ComboBox>
+                </Grid>
+
+                <CheckBox Style="{StaticResource DarkCheckBox}" Margin="0,0,0,9"
+                          Content="{Binding [sm_startmax], Source={x:Static loc:Loc.I}}" IsChecked="{Binding StartMaximized}"/>
+                <TextBlock Text="{Binding [sm_consolewin], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionLabel}" Margin="0,8,0,8"/>
+                <CheckBox Style="{StaticResource DarkCheckBox}" Margin="0,0,0,9"
+                          Content="{Binding [sm_console_launch], Source={x:Static loc:Loc.I}}" IsChecked="{Binding ShowConsoleOnLaunch}"/>
+                <CheckBox Style="{StaticResource DarkCheckBox}" Margin="0,0,0,9"
+                          Content="{Binding [sm_console_crash], Source={x:Static loc:Loc.I}}" IsChecked="{Binding ShowConsoleOnCrash}"/>
+                <CheckBox Style="{StaticResource DarkCheckBox}" Margin="0,0,0,22"
+                          Content="{Binding [sm_console_hide], Source={x:Static loc:Loc.I}}" IsChecked="{Binding HideConsoleOnGameClose}"/>
+
+                <!-- ═══════════ SERVICES ═══════════ -->
+                <Border Height="1" Background="{StaticResource Surface2Brush}" Margin="0,0,0,20"/>
+                <TextBlock Text="{Binding [services], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionHeader}"/>
+
+                <TextBlock Text="{Binding [ss_logpaste], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionLabel}"/>
+                <TextBox Style="{StaticResource AnchorTextBoxStyle}" Height="36" Margin="0,0,0,14"
+                         Text="{Binding LogPasteService, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <TextBlock Text="{Binding [ss_metadata], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionLabel}"/>
+                <TextBox Style="{StaticResource AnchorTextBoxStyle}" Height="36" Margin="0,0,0,14"
+                         Text="{Binding MetadataServer, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <TextBlock Text="{Binding [ss_assets], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionLabel}"/>
+                <TextBox Style="{StaticResource AnchorTextBoxStyle}" Height="36" Margin="0,0,0,14"
+                         Text="{Binding AssetsServer, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <TextBlock Text="{Binding [ss_cfkey], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionLabel}"/>
+                <TextBox Style="{StaticResource AnchorTextBoxStyle}" Height="36" Margin="0,0,0,14"
+                         Text="{Binding CurseForgeApiKey, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <TextBlock Text="{Binding [ss_modrinth], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionLabel}"/>
+                <TextBox Style="{StaticResource AnchorTextBoxStyle}" Height="36" Margin="0,0,0,22"
+                         Text="{Binding ModrinthApiUrl, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <!-- ═══════════ LANGUAGES ═══════════ -->
+                <Border Height="1" Background="{StaticResource Surface2Brush}" Margin="0,0,0,20"/>
+                <TextBlock Text="{Binding [languages], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionHeader}"/>
+                <TextBlock Text="{Binding [languages_note], Source={x:Static loc:Loc.I}}"
+                           FontFamily="{StaticResource PrimaryFont}" FontSize="11.5"
+                           Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,12" MaxWidth="460"/>
+                <ComboBox Style="{StaticResource AnchorComboBoxStyle}" Width="280" HorizontalAlignment="Left" Margin="0,0,0,22"
+                          MaxDropDownHeight="240"
+                          ItemsSource="{Binding Languages}" SelectedItem="{Binding Language}"/>
+
+                <!-- ═══════════ PRIVACY & TELEMETRY ═══════════ -->
+                <Border Height="1" Background="{StaticResource Surface2Brush}" Margin="0,0,0,20"/>
+                <TextBlock Text="{Binding [privacy], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionHeader}"/>
+                <Border Background="{StaticResource Surface1Brush}" CornerRadius="8" Padding="16,12" Margin="0,0,0,14">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="M12,2 L20,5 V11 C20,16 16,20 12,22 C8,20 4,16 4,11 V5 Z M9,12 L11,14 L15,9"
+                              Stroke="{StaticResource SuccessBrush}" StrokeThickness="1.5" Fill="Transparent"
+                              StrokeLineJoin="Round" StrokeEndLineCap="Round" Width="22" Height="22" Stretch="Uniform"
+                              VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="{Binding [sp_telemetry], Source={x:Static loc:Loc.I}}"
+                                   FontFamily="{StaticResource PrimaryFont}" FontSize="12.5"
+                                   Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="500"/>
+                    </StackPanel>
+                </Border>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <Button Content="{Binding [sp_clearcache], Source={x:Static loc:Loc.I}}" Style="{StaticResource GhostButtonStyle}"
+                            Height="36" Padding="16,0" Command="{Binding ClearCacheCommand}"/>
+                    <TextBlock Text="{Binding CacheStatus}" VerticalAlignment="Center" Margin="12,0,0,0"
+                               FontFamily="{StaticResource PrimaryFont}" FontSize="12"
+                               Foreground="{StaticResource TextSecondaryBrush}"/>
+                </StackPanel>
+                <Button Content="{Binding [sp_reset], Source={x:Static loc:Loc.I}}" Style="{StaticResource DangerButtonStyle}"
+                        Height="36" Padding="16,0" HorizontalAlignment="Left" Margin="0,6,0,22"
+                        Click="ResetSettings_Click"/>
+
+                <!-- ═══════════ ABOUT ═══════════ -->
+                <Border Height="1" Background="{StaticResource Surface2Brush}" Margin="0,0,0,20"/>
+                <TextBlock Text="{Binding [about], Source={x:Static loc:Loc.I}}" Style="{StaticResource SectionHeader}"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                    <Image Source="pack://application:,,,/Assets/AnchorLauncherIcon.png" Width="64" Height="64"
+                           RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Top" Margin="0,0,18,0"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Anchor Launcher" FontFamily="{StaticResource PrimaryFont}"
+                                   FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding AppVersion}" FontFamily="{StaticResource PrimaryFont}" FontSize="13"
+                                   Foreground="{StaticResource AccentBrush}" Margin="0,2,0,0"/>
+                        <TextBlock Text="{Binding BuildDate, StringFormat=Build date: {0}}" FontFamily="{StaticResource PrimaryFont}"
+                                   FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,4,0,0"/>
+                        <TextBlock Text="Built with C# WPF · .NET 8.0" FontFamily="{StaticResource PrimaryFont}"
+                                   FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="{Binding [sa_checkupd], Source={x:Static loc:Loc.I}}" Style="{StaticResource PrimaryButtonStyle}"
+                            Height="36" Padding="18,0" Command="{Binding CheckUpdateCommand}"/>
+                    <Button Content="GitHub" Style="{StaticResource GhostButtonStyle}"
+                            Height="36" Padding="18,0" Margin="10,0,0,0" Command="{Binding OpenGitHubCommand}"/>
+                    <ProgressBar Style="{StaticResource AnchorProgressBarStyle}" Width="90" Height="3"
+                                 IsIndeterminate="True" Margin="12,0,0,0" VerticalAlignment="Center"
+                                 Visibility="{Binding IsCheckingUpdate, Converter={StaticResource BoolToVis}}"/>
+                    <TextBlock Text="{Binding UpdateStatus}" VerticalAlignment="Center" Margin="12,0,0,0"
+                               FontFamily="{StaticResource PrimaryFont}" FontSize="12"
+                               Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" MaxWidth="280"/>
+                </StackPanel>
+
+                <!-- Credits & Licenses -->
+                <Expander Margin="0,16,0,0" Foreground="{StaticResource TextPrimaryBrush}">
+                    <Expander.Header>
+                        <TextBlock Text="{Binding [sa_credits], Source={x:Static loc:Loc.I}}" FontFamily="{StaticResource PrimaryFont}"
+                                   FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    </Expander.Header>
+                    <Border Background="{StaticResource Surface1Brush}" CornerRadius="8" Padding="16,14" Margin="0,8,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Anchor Launcher v1.0.0" FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
+                            <TextBlock Text="Development Project: Anchor Analytics" FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,3,0,0"/>
+                            <TextBlock FontFamily="{StaticResource PrimaryFont}" FontSize="12"
+                                       Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0">
+                                <Run Text="Lead: engionite  "/>
+                                <Hyperlink NavigateUri="https://github.com/engionite"
+                                           RequestNavigate="Hyperlink_RequestNavigate"
+                                           Foreground="{StaticResource AccentBrush}" TextDecorations="None">
+                                    github.com/engionite
+                                </Hyperlink>
+                            </TextBlock>
+                            <TextBlock Text="© 2026 Simplexity Development. All rights reserved." FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,10"/>
+
+                            <TextBlock Text="This software uses open-source libraries:" FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="12" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,4"/>
+                            <TextBlock Text="• CommunityToolkit.Mvvm (MIT)" FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <TextBlock Text="• Microsoft.Identity.Client (MIT)" FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <TextBlock Text="• System.Text.Json (MIT)" FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,10"/>
+
+                            <TextBlock Text="Minecraft is a trademark of Mojang AB." FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="11.5" Foreground="{StaticResource TextDisabledBrush}"/>
+                            <TextBlock Text="Not affiliated with Mojang or Microsoft." FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="11.5" Foreground="{StaticResource TextDisabledBrush}"/>
+                        </StackPanel>
+                    </Border>
+                </Expander>
+
+                <!-- ═══════════ SAVE ═══════════ -->
+                <Border Height="1" Background="{StaticResource Surface2Brush}" Margin="0,22,0,18"/>
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="{Binding [save_settings], Source={x:Static loc:Loc.I}}" Style="{StaticResource PrimaryButtonStyle}"
+                            Height="40" Padding="24,0" Command="{Binding SaveCommand}"/>
+                    <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" Margin="14,0,0,0"
+                               FontFamily="{StaticResource PrimaryFont}" FontSize="12"
+                               Foreground="{StaticResource SuccessBrush}" TextWrapping="Wrap" MaxWidth="360"/>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

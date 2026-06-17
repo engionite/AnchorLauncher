@@ -1,0 +1,70 @@
+<Window x:Class="AnchorLauncher.Views.Common.ConfirmDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        SizeToContent="Height"
+        Width="430"
+        ShowInTaskbar="False"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
+
+    <!-- Outer margin gives the drop shadow room to render -->
+    <Border Background="#18181C"
+            BorderBrush="{StaticResource Surface2Brush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Margin="14"
+            MouseLeftButtonDown="Root_MouseDown">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="22" ShadowDepth="4" Direction="270" Opacity="0.55"/>
+        </Border.Effect>
+
+        <StackPanel Margin="24,22,24,20">
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                <!-- Warning triangle in Anchor orange -->
+                <Path Data="M 12,3 L 22,21 L 2,21 Z M 12,10 V 15 M 12,17.6 V 18"
+                      Stroke="{StaticResource AccentBrush}" StrokeThickness="1.7"
+                      StrokeLineJoin="Round" StrokeEndLineCap="Round"
+                      Width="22" Height="22" Stretch="Uniform"
+                      VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <TextBlock x:Name="TitleText"
+                           Text="Delete instance"
+                           FontFamily="{StaticResource PrimaryFont}"
+                           FontSize="15" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimaryBrush}"
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- Subject (instance/world name) in bold white -->
+            <TextBlock x:Name="SubjectText"
+                       FontFamily="{StaticResource PrimaryFont}"
+                       FontSize="14" FontWeight="Bold"
+                       Foreground="#FFFFFF"
+                       TextWrapping="Wrap"/>
+
+            <!-- Consequence line in secondary text -->
+            <TextBlock x:Name="DetailText"
+                       FontFamily="{StaticResource PrimaryFont}"
+                       FontSize="12.5"
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       TextWrapping="Wrap"
+                       Margin="0,6,0,20"/>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Cancel"
+                        Style="{StaticResource GhostButtonStyle}"
+                        Height="36" Padding="18,0" Margin="0,0,10,0"
+                        Click="BtnCancel_Click"/>
+                <Button x:Name="BtnConfirm"
+                        Content="Delete"
+                        Style="{StaticResource DangerButtonStyle}"
+                        Height="36" Padding="22,0"
+                        Click="BtnConfirm_Click"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

@@ -1,0 +1,91 @@
+<UserControl x:Class="AnchorLauncher.Views.Bedrock.BedrockPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:AnchorLauncher.Converters"
+             TextOptions.TextFormattingMode="Display"
+             TextOptions.TextRenderingMode="ClearType">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter          x:Key="BoolToVis"/>
+        <conv:InverseBoolToVisibilityConverter x:Key="InvBoolToVis"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <!-- ══ INSTALLED: hero launch panel ══ -->
+        <Border Visibility="{Binding IsInstalled, Converter={StaticResource BoolToVis}}"
+                CornerRadius="14" ClipToBounds="True" MaxWidth="720" MaxHeight="380"
+                VerticalAlignment="Center" HorizontalAlignment="Center">
+            <Border.Background>
+                <ImageBrush ImageSource="pack://application:,,,/Assets/wallpaper_bedrock.png"
+                            Stretch="UniformToFill"/>
+            </Border.Background>
+            <Border CornerRadius="14" Padding="48,40">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#660F0F13" Offset="0"/>
+                        <GradientStop Color="#E60F0F13" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <StackPanel VerticalAlignment="Bottom">
+                    <TextBlock Text="B E D R O C K   E D I T I O N"
+                               FontFamily="{StaticResource PrimaryFont}" FontSize="10" FontWeight="Bold"
+                               Foreground="#00B4FF"/>
+                    <TextBlock Text="Ready to play"
+                               FontFamily="{StaticResource PrimaryFont}" FontSize="34" FontWeight="ExtraBold"
+                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,6,0,4"/>
+                    <TextBlock Text="Bedrock is installed and managed by Windows — launch it straight from Anchor."
+                               FontFamily="{StaticResource PrimaryFont}" FontSize="13"
+                               Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,18"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Launch Bedrock"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                Height="44" Padding="32,0" FontSize="14"
+                                Command="{Binding LaunchCommand}"/>
+                        <Button Content="Refresh"
+                                Style="{StaticResource GhostButtonStyle}"
+                                Height="44" Padding="18,0" FontSize="13" Margin="10,0,0,0"
+                                Command="{Binding RefreshCommand}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <!-- ══ NOT INSTALLED: store banner ══ -->
+        <Border Visibility="{Binding IsInstalled, Converter={StaticResource InvBoolToVis}}"
+                Background="{StaticResource Surface1Brush}"
+                BorderBrush="{StaticResource Surface2Brush}" BorderThickness="1"
+                CornerRadius="14" Padding="48,42" MaxWidth="640"
+                VerticalAlignment="Center" HorizontalAlignment="Center">
+            <StackPanel>
+                <Border Width="68" Height="68" CornerRadius="16" Background="#152736"
+                        HorizontalAlignment="Left" Margin="0,0,0,18">
+                    <TextBlock Text="B" FontSize="30" FontWeight="Bold" Foreground="#00B4FF"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Text="Install Minecraft Bedrock"
+                           FontFamily="{StaticResource PrimaryFont}" FontSize="24" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                <TextBlock Text="Bedrock Edition isn't installed on this PC. It's distributed through the Microsoft Store — install it there and Anchor will detect and launch it."
+                           FontFamily="{StaticResource PrimaryFont}" FontSize="13"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           TextWrapping="Wrap" Margin="0,8,0,22"/>
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="Open Microsoft Store"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Height="42" Padding="24,0" FontSize="13"
+                            Command="{Binding OpenStoreCommand}"/>
+                    <Button Content="Refresh"
+                            Style="{StaticResource GhostButtonStyle}"
+                            Height="42" Padding="18,0" FontSize="13" Margin="10,0,0,0"
+                            Command="{Binding RefreshCommand}"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Status line -->
+        <TextBlock Text="{Binding StatusMessage}"
+                   FontFamily="{StaticResource PrimaryFont}" FontSize="12"
+                   Foreground="{StaticResource TextSecondaryBrush}"
+                   HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,22"/>
+    </Grid>
+</UserControl>

@@ -1,0 +1,507 @@
+<Window x:Class="AnchorLauncher.Views.Instances.EditInstanceDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:conv="clr-namespace:AnchorLauncher.Converters"
+        WindowStyle="None"
+        AllowsTransparency="False"
+        Background="#0F0F13"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Width="780" Height="640"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter      x:Key="BoolToVis"/>
+        <conv:IndexToBooleanConverter      x:Key="IndexToBool"/>
+        <conv:IndexToVisibilityConverter   x:Key="IndexToVis"/>
+        <conv:CountToVisibilityConverter   x:Key="CountToVis"/>
+
+        <!-- Tab toggle -->
+        <Style x:Key="TabButton" TargetType="ToggleButton">
+            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
+            <Setter Property="FontSize"   Value="13"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+            <Setter Property="Cursor"     Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="bg" Padding="16,12" Background="Transparent"
+                                BorderBrush="Transparent" BorderThickness="0,0,0,2">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="bg" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Dark checkbox -->
+        <Style x:Key="DarkCheckBox" TargetType="CheckBox">
+            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
+            <Setter Property="FontSize"   Value="13"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="Cursor"     Value="Hand"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <StackPanel Orientation="Horizontal" Background="Transparent">
+                            <Border x:Name="box" Width="18" Height="18" CornerRadius="4"
+                                    Background="{StaticResource Surface1Brush}"
+                                    BorderBrush="{StaticResource Surface2Brush}" BorderThickness="1"
+                                    VerticalAlignment="Center" Margin="0,0,8,0">
+                                <Path x:Name="check" Data="M 4,9 L 8,13 L 14,5"
+                                      Stroke="White" StrokeThickness="2"
+                                      StrokeEndLineCap="Round" StrokeStartLineCap="Round"
+                                      Stretch="Uniform" Margin="3" Visibility="Collapsed"/>
+                            </Border>
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="box"   Property="Background" Value="{StaticResource AccentBrush}"/>
+                                <Setter TargetName="box"   Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                <Setter TargetName="check" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SectionLabel" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
+            <Setter Property="FontSize"   Value="10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextDisabledBrush}"/>
+            <Setter Property="Margin"     Value="0,0,0,8"/>
+        </Style>
+    </Window.Resources>
+
+    <Border BorderBrush="{StaticResource Surface2Brush}" BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>  <!-- title -->
+                <RowDefinition Height="Auto"/>  <!-- tabs -->
+                <RowDefinition Height="*"/>     <!-- content -->
+                <RowDefinition Height="Auto"/>  <!-- footer -->
+            </Grid.RowDefinitions>
+
+            <!-- Title bar -->
+            <Grid Grid.Row="0" Height="46" Background="{StaticResource Surface1Brush}"
+                  MouseLeftButtonDown="TitleBar_MouseDown">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="18,0,0,0">
+                    <TextBlock Text="Edit Instance"
+                               FontFamily="{StaticResource PrimaryFont}" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <TextBlock Text="{Binding InstanceName}"
+                               FontFamily="{StaticResource PrimaryFont}" FontSize="13"
+                               Foreground="{StaticResource TextSecondaryBrush}" Margin="8,0,0,0"/>
+                </StackPanel>
+                <Button Style="{StaticResource IconButtonStyle}" Width="30" Height="30"
+                        HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0"
+                        Click="BtnClose_Click" ToolTip="Close">
+                    <Path Data="M 7,7 L 21,21 M 21,7 L 7,21" Stroke="{StaticResource TextSecondaryBrush}"
+                          StrokeThickness="1.5" StrokeEndLineCap="Round" Width="13" Height="13" Stretch="Uniform"/>
+                </Button>
+            </Grid>
+
+            <!-- Tabs -->
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Background="{StaticResource Surface1Brush}"
+                        Margin="8,0,0,0">
+                <ToggleButton Style="{StaticResource TabButton}" Content="Mods"
+                              IsChecked="{Binding SelectedTabIndex, Converter={StaticResource IndexToBool}, ConverterParameter=0}"/>
+                <ToggleButton Style="{StaticResource TabButton}" Content="Resource Packs"
+                              IsChecked="{Binding SelectedTabIndex, Converter={StaticResource IndexToBool}, ConverterParameter=1}"/>
+                <ToggleButton Style="{StaticResource TabButton}" Content="Saves"
+                              IsChecked="{Binding SelectedTabIndex, Converter={StaticResource IndexToBool}, ConverterParameter=2}"/>
+                <ToggleButton Style="{StaticResource TabButton}" Content="Settings"
+                              IsChecked="{Binding SelectedTabIndex, Converter={StaticResource IndexToBool}, ConverterParameter=3}"/>
+            </StackPanel>
+
+            <!-- ══════════ CONTENT ══════════ -->
+            <Grid Grid.Row="2" Margin="20,16,20,8">
+
+                <!-- ── Mods ── -->
+                <Grid Visibility="{Binding SelectedTabIndex, Converter={StaticResource IndexToVis}, ConverterParameter=0}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                        <TextBlock Text="Toggle a mod to add/remove its .disabled extension"
+                                   FontFamily="{StaticResource PrimaryFont}" FontSize="12"
+                                   Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="Snapshot History" Style="{StaticResource GhostButtonStyle}"
+                                    Height="30" Padding="12,0" FontSize="11" Margin="0,0,8,0"
+                                    Command="{Binding ToggleSnapshotPanelCommand}"/>
+                            <Button Content="Open Folder" Style="{StaticResource GhostButtonStyle}"
+                                    Height="30" Padding="12,0" FontSize="11"
+                                    Command="{Binding OpenModsFolderCommand}"/>
+                        </StackPanel>
+                    </Grid>
+                    <Border Grid.Row="1" Background="{StaticResource Surface1Brush}" CornerRadius="8">
+                        <Grid>
+                            <TextBlock Text="No mods in this instance."
+                                       FontFamily="{StaticResource PrimaryFont}" FontSize="12"
+                                       Foreground="{StaticResource TextDisabledBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Visibility="{Binding Mods.Count, Converter={StaticResource CountToVis}}"/>
+                            <ScrollViewer Style="{StaticResource AnchorScrollViewerStyle}" Margin="4">
+                                <ItemsControl ItemsSource="{Binding Mods}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Padding="10,8" Margin="0,1">
+                                                <CheckBox Style="{StaticResource DarkCheckBox}"
+                                                          Content="{Binding FileName}"
+                                                          IsChecked="{Binding IsEnabled, Mode=TwoWay}"
+                                                          Command="{Binding DataContext.ToggleModCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                          CommandParameter="{Binding}"/>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+
+                            <!-- ── Snapshot history overlay ── -->
+                            <Border Background="#F018181C" CornerRadius="8"
+                                    Visibility="{Binding IsSnapshotPanelOpen, Converter={StaticResource BoolToVis}}">
+                                <Grid Margin="12">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="SNAPSHOT HISTORY"
+                                               FontFamily="{StaticResource PrimaryFont}" FontSize="10" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextDisabledBrush}" Margin="2,0,0,8"/>
+                                    <TextBlock Grid.Row="1" Text="No snapshots yet — they're taken automatically before any mod change."
+                                               FontFamily="{StaticResource PrimaryFont}" FontSize="12"
+                                               Foreground="{StaticResource TextDisabledBrush}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap"
+                                               Visibility="{Binding SnapshotHistory.Count, Converter={StaticResource CountToVis}}"/>
+                                    <ScrollViewer Grid.Row="1" Style="{StaticResource AnchorScrollViewerStyle}">
+                                        <ItemsControl ItemsSource="{Binding SnapshotHistory}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="#26000000" CornerRadius="6" Padding="12,9" Margin="0,0,6,6">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <TextBlock Text="{Binding TimestampDisplay}"
+                                                                               FontFamily="Consolas, Cascadia Mono" FontSize="11.5"
+                                                                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                                    <TextBlock Text="{Binding ChangeSummary}"
+                                                                               FontFamily="{StaticResource PrimaryFont}" FontSize="11"
+                                                                               Foreground="{StaticResource AccentBrush}" Margin="10,0,0,0"/>
+                                                                </StackPanel>
+                                                                <TextBlock Text="{Binding Reason}"
+                                                                           FontFamily="{StaticResource PrimaryFont}" FontSize="10.5"
+                                                                           Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0"/>
+                                                            </StackPanel>
+                                                            <Button Grid.Column="1" Content="Restore"
+                                                                    Style="{StaticResource GhostButtonStyle}"
+                                                                    Height="28" Padding="12,0" FontSize="11" VerticalAlignment="Center"
+                                                                    Command="{Binding DataContext.RestoreSnapshotCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                    CommandParameter="{Binding}"/>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- ── Resource Packs + Shaderpacks ── -->
+                <Grid Visibility="{Binding SelectedTabIndex, Converter={StaticResource IndexToVis}, ConverterParameter=1}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                        <TextBlock Text="Order packs (top = highest priority). Saved to options.txt."
+                                   FontFamily="{StaticResource PrimaryFont}" FontSize="12"
+                                   Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                        <Button Content="Open Folder" Style="{StaticResource GhostButtonStyle}"
+                                Height="30" Padding="12,0" FontSize="11" HorizontalAlignment="Right"
+                                Command="{Binding OpenResourcePacksFolderCommand}"/>
+                    </Grid>
+                    <Border Grid.Row="1" Background="{StaticResource Surface1Brush}" CornerRadius="8">
+                        <ScrollViewer Style="{StaticResource AnchorScrollViewerStyle}" Margin="4">
+                            <ItemsControl ItemsSource="{Binding ResourcePacks}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Padding="10,7" Margin="0,1">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
+                                                           FontFamily="{StaticResource PrimaryFont}" FontSize="13"
+                                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                    <Button Style="{StaticResource IconButtonStyle}" Width="28" Height="28"
+                                                            ToolTip="Move up"
+                                                            Command="{Binding DataContext.MovePackUpCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}">
+                                                        <Path Data="M 12,7 L 5,15 L 19,15 Z" Fill="{StaticResource TextSecondaryBrush}"
+                                                              Width="11" Height="11" Stretch="Uniform"/>
+                                                    </Button>
+                                                    <Button Style="{StaticResource IconButtonStyle}" Width="28" Height="28"
+                                                            ToolTip="Move down"
+                                                            Command="{Binding DataContext.MovePackDownCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}">
+                                                        <Path Data="M 5,9 L 19,9 L 12,17 Z" Fill="{StaticResource TextSecondaryBrush}"
+                                                              Width="11" Height="11" Stretch="Uniform"/>
+                                                    </Button>
+                                                    <Button Style="{StaticResource IconButtonStyle}" Width="28" Height="28"
+                                                            ToolTip="Delete"
+                                                            Command="{Binding DataContext.DeletePackCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}">
+                                                        <Path Data="M 8,8 L 20,20 M 20,8 L 8,20" Stroke="{StaticResource ErrorBrush}"
+                                                              StrokeThickness="1.5" StrokeEndLineCap="Round"
+                                                              Width="11" Height="11" Stretch="Uniform"/>
+                                                    </Button>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Shaderpacks header -->
+                    <Grid Grid.Row="2" Margin="0,14,0,8">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="SHADERPACKS"
+                                       FontFamily="{StaticResource PrimaryFont}" FontSize="10" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextDisabledBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="· live-monitored, drop .zip files here to install"
+                                       FontFamily="{StaticResource PrimaryFont}" FontSize="10"
+                                       Foreground="{StaticResource TextDisabledBrush}" Margin="8,0,0,0"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <Button Content="Download More" Style="{StaticResource GhostButtonStyle}"
+                                Height="28" Padding="12,0" FontSize="11" HorizontalAlignment="Right"
+                                Command="{Binding DownloadMoreShadersCommand}"/>
+                    </Grid>
+
+                    <!-- Shaderpack list (drop target) -->
+                    <Border Grid.Row="3" Background="{StaticResource Surface1Brush}" CornerRadius="8"
+                            AllowDrop="True" Drop="Shaderpacks_Drop" DragOver="Shaderpacks_DragOver">
+                        <Grid>
+                            <TextBlock Text="No shaderpacks — drag a .zip here or click Download More."
+                                       FontFamily="{StaticResource PrimaryFont}" FontSize="12"
+                                       Foreground="{StaticResource TextDisabledBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Visibility="{Binding Shaderpacks.Count, Converter={StaticResource CountToVis}}"/>
+                            <ScrollViewer Style="{StaticResource AnchorScrollViewerStyle}" Margin="4">
+                                <ItemsControl ItemsSource="{Binding Shaderpacks}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Padding="10,7" Margin="0,1">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <CheckBox Grid.Column="0" Style="{StaticResource DarkCheckBox}"
+                                                              Content="{Binding FileName}"
+                                                              IsChecked="{Binding IsEnabled, Mode=TwoWay}"
+                                                              Command="{Binding DataContext.ToggleShaderpackCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                              CommandParameter="{Binding}"/>
+                                                    <Button Grid.Column="1" Style="{StaticResource IconButtonStyle}"
+                                                            Width="26" Height="26" ToolTip="Delete"
+                                                            Command="{Binding DataContext.DeleteShaderpackCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}">
+                                                        <Path Data="M 8,8 L 20,20 M 20,8 L 8,20" Stroke="{StaticResource ErrorBrush}"
+                                                              StrokeThickness="1.5" StrokeEndLineCap="Round"
+                                                              Width="10" Height="10" Stretch="Uniform"/>
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- ── Saves ── -->
+                <Grid Visibility="{Binding SelectedTabIndex, Converter={StaticResource IndexToVis}, ConverterParameter=2}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                        <TextBlock Text="Back up or delete singleplayer worlds"
+                                   FontFamily="{StaticResource PrimaryFont}" FontSize="12"
+                                   Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                        <Button Content="Open Folder" Style="{StaticResource GhostButtonStyle}"
+                                Height="30" Padding="12,0" FontSize="11" HorizontalAlignment="Right"
+                                Command="{Binding OpenSavesFolderCommand}"/>
+                    </Grid>
+                    <Border Grid.Row="1" Background="{StaticResource Surface1Brush}" CornerRadius="8">
+                        <ScrollViewer Style="{StaticResource AnchorScrollViewerStyle}" Margin="4">
+                            <ItemsControl ItemsSource="{Binding Saves}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Padding="10,8" Margin="0,1">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Border Grid.Column="0" Width="32" Height="32" CornerRadius="4"
+                                                        Background="{StaticResource Surface2Brush}" Margin="0,0,12,0">
+                                                    <Image Source="{Binding IconPath}" Stretch="UniformToFill"/>
+                                                </Border>
+                                                <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center"
+                                                           FontFamily="{StaticResource PrimaryFont}" FontSize="13"
+                                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                                    <Button Content="Backup" Style="{StaticResource GhostButtonStyle}"
+                                                            Height="28" Padding="12,0" FontSize="11" Margin="0,0,6,0"
+                                                            Command="{Binding DataContext.BackupWorldCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}"/>
+                                                    <Button Content="Delete" Style="{StaticResource GhostButtonStyle}"
+                                                            Height="28" Padding="12,0" FontSize="11"
+                                                            Click="WorldDelete_Click"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+
+                <!-- ── Settings ── -->
+                <ScrollViewer Style="{StaticResource AnchorScrollViewerStyle}"
+                              Visibility="{Binding SelectedTabIndex, Converter={StaticResource IndexToVis}, ConverterParameter=3}">
+                    <StackPanel Margin="0,0,8,0">
+
+                        <!-- Memory -->
+                        <Grid Margin="0,0,0,18">
+                            <TextBlock Text="MEMORY ALLOCATION" Style="{StaticResource SectionLabel}"/>
+                            <CheckBox Style="{StaticResource DarkCheckBox}" Content="Override" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                      IsChecked="{Binding OverrideMemory}"/>
+                            <StackPanel Margin="0,22,0,0">
+                                <Slider Style="{StaticResource AnchorSliderStyle}"
+                                        Minimum="512" Maximum="16384" TickFrequency="512" IsSnapToTickEnabled="True"
+                                        Value="{Binding MemoryMB}"/>
+                                <TextBlock Text="{Binding MemoryMB, StringFormat={}{0} MB}"
+                                           FontFamily="{StaticResource PrimaryFont}" FontSize="13"
+                                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Java -->
+                        <Grid Margin="0,0,0,18">
+                            <TextBlock Text="JAVA EXECUTABLE" Style="{StaticResource SectionLabel}"/>
+                            <CheckBox Style="{StaticResource DarkCheckBox}" Content="Override" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                      IsChecked="{Binding OverrideJava}"/>
+                            <Grid Margin="0,22,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" Style="{StaticResource AnchorTextBoxStyle}" Height="36"
+                                         Foreground="#FFFFFF" CaretBrush="#FFFFFF"
+                                         IsEnabled="{Binding OverrideJava}"
+                                         Text="{Binding JavaPath, UpdateSourceTrigger=PropertyChanged}"/>
+                                <Button Grid.Column="1" Content="Browse" Style="{StaticResource GhostButtonStyle}"
+                                        Height="36" Padding="14,0" Margin="8,0,0,0"
+                                        IsEnabled="{Binding OverrideJava}" Click="BrowseJava_Click"/>
+                            </Grid>
+                        </Grid>
+
+                        <!-- Resolution -->
+                        <Grid Margin="0,0,0,18">
+                            <TextBlock Text="WINDOW RESOLUTION" Style="{StaticResource SectionLabel}"/>
+                            <CheckBox Style="{StaticResource DarkCheckBox}" Content="Override" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                      IsChecked="{Binding OverrideResolution}"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,22,0,0">
+                                <TextBox Style="{StaticResource AnchorTextBoxStyle}" Width="90" Height="36"
+                                         Foreground="#FFFFFF" CaretBrush="#FFFFFF"
+                                         IsEnabled="{Binding OverrideResolution}"
+                                         Text="{Binding WindowWidth, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Text="×" VerticalAlignment="Center" Margin="10,0"
+                                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="14"/>
+                                <TextBox Style="{StaticResource AnchorTextBoxStyle}" Width="90" Height="36"
+                                         Foreground="#FFFFFF" CaretBrush="#FFFFFF"
+                                         IsEnabled="{Binding OverrideResolution}"
+                                         Text="{Binding WindowHeight, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Fullscreen -->
+                        <Grid Margin="0,0,0,18">
+                            <TextBlock Text="FULLSCREEN" Style="{StaticResource SectionLabel}"/>
+                            <CheckBox Style="{StaticResource DarkCheckBox}" Content="Override" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                      IsChecked="{Binding OverrideFullscreen}"/>
+                            <CheckBox Style="{StaticResource DarkCheckBox}" Content="Launch in fullscreen"
+                                      Margin="0,22,0,0"
+                                      IsChecked="{Binding Fullscreen}" IsEnabled="{Binding OverrideFullscreen}"/>
+                        </Grid>
+
+                        <!-- JVM flags -->
+                        <Grid Margin="0,0,0,8">
+                            <TextBlock Text="CUSTOM JVM ARGUMENTS" Style="{StaticResource SectionLabel}"/>
+                            <CheckBox Style="{StaticResource DarkCheckBox}" Content="Override" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                      IsChecked="{Binding OverrideJvm}"/>
+                            <TextBox Style="{StaticResource AnchorTextBoxStyle}" Height="76" Margin="0,22,0,0"
+                                     Foreground="#FFFFFF" CaretBrush="#FFFFFF"
+                                     AcceptsReturn="True" TextWrapping="Wrap"
+                                     VerticalContentAlignment="Top"
+                                     IsEnabled="{Binding OverrideJvm}"
+                                     Text="{Binding JvmArgs, UpdateSourceTrigger=PropertyChanged}"/>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+
+            <!-- Footer -->
+            <Border Grid.Row="3" Background="{StaticResource Surface1Brush}" Padding="20,12">
+                <Grid>
+                    <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center"
+                               FontFamily="{StaticResource PrimaryFont}" FontSize="11"
+                               Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Cancel" Style="{StaticResource GhostButtonStyle}"
+                                Height="36" Padding="20,0" Margin="0,0,10,0" Click="BtnClose_Click"/>
+                        <Button Content="Save Settings" Style="{StaticResource PrimaryButtonStyle}"
+                                Height="36" Padding="22,0" Command="{Binding SaveCommand}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

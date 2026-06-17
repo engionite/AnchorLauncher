@@ -1,0 +1,73 @@
+name: Release
+
+# Builds the self-contained launcher and publishes a GitHub Release whenever you
+# push a version tag (e.g. `git tag v1.0.0 && git push origin v1.0.0`).
+# It signs the .exe automatically once you've configured Azure Trusted Signing
+# (see the "Code signing" block below); until then it releases an unsigned build.
+
+on:
+  push:
+    tags: [ 'v*' ]
+  workflow_dispatch:        # also runnable manually from the Actions tab
+
+permissions:
+  contents: write           # required to create the Release
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Publish (self-contained, single file)
+        env:
+          # Add ANCHOR_CF_KEY as a repo secret to enable CurseForge in release builds.
+          # Without it, CurseForge results are skipped (Modrinth still works).
+          ANCHOR_CF_KEY: ${{ secrets.ANCHOR_CF_KEY }}
+        run: >
+          dotnet publish AnchorLauncher/AnchorLauncher.csproj
+          -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -o publish
+
+      # ─────────────────────────── Code signing (optional) ───────────────────────────
+      # One-time setup to remove the SmartScreen warning:
+      #   1. In Azure, create a Trusted Signing account + a certificate profile.
+      #   2. Create a service principal with the "Trusted Signing Certificate Profile
+      #      Signer" role, then add these REPO SECRETS:
+      #         AZURE_CLIENT_ID  AZURE_TENANT_ID  AZURE_CLIENT_SECRET
+      #   3. Add these REPO VARIABLES:
+      #         TS_ENDPOINT   (e.g. https://eus.codesigning.azure.net)
+      #         TS_ACCOUNT    (your Trusted Signing account name)
+      #         TS_PROFILE    (your certificate profile name)
+      # The step below stays skipped until AZURE_CLIENT_ID exists, so unsigned
+      # releases keep working in the meantime.
+      - name: Detect signing config
+        id: sign
+        shell: bash
+        run: echo "enabled=${{ secrets.AZURE_CLIENT_ID != '' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Sign (Azure Trusted Signing)
+        if: steps.sign.outputs.enabled == 'true'
+        uses: azure/trusted-signing-action@v0.5.1
+        env:
+          AZURE_CLIENT_ID:     ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID:     ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        with:
+          endpoint: ${{ vars.TS_ENDPOINT }}
+          trusted-signing-account-name: ${{ vars.TS_ACCOUNT }}
+          certificate-profile-name: ${{ vars.TS_PROFILE }}
+          files-folder: ${{ github.workspace }}\publish
+          files-folder-filter: exe
+      # ────────────────────────────────────────────────────────────────────────────────
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: publish/AnchorLauncher.exe
+          generate_release_notes: true

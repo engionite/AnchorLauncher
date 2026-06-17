@@ -1,0 +1,431 @@
+<Page x:Class="AnchorLauncher.Views.Home.HomePage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:conv="clr-namespace:AnchorLauncher.Converters"
+      xmlns:mi="clr-namespace:AnchorLauncher.Models.Instances"
+      xmlns:mk="clr-namespace:AnchorLauncher.Models.Marketplace"
+      xmlns:hm="clr-namespace:AnchorLauncher.Models.Home"
+      xmlns:loc="clr-namespace:AnchorLauncher.Services.Platform"
+      Background="{StaticResource AppBackgroundBrush}"
+      Title="Home"
+      TextOptions.TextFormattingMode="Display"
+      TextOptions.TextRenderingMode="ClearType">
+
+    <Page.Resources>
+        <BooleanToVisibilityConverter          x:Key="BoolToVis"/>
+        <conv:InverseBoolToVisibilityConverter x:Key="InvBoolToVis"/>
+        <conv:ModLoaderToBrushConverter        x:Key="LoaderBrush"/>
+        <conv:InstanceIconConverter            x:Key="InstanceIcon"/>
+
+        <!-- Section header (uppercase, tracked-out) -->
+        <Style x:Key="ColumnHeader" TargetType="TextBlock">
+            <Setter Property="FontFamily"  Value="{StaticResource PrimaryFont}"/>
+            <Setter Property="FontSize"    Value="11"/>
+            <Setter Property="FontWeight"  Value="SemiBold"/>
+            <Setter Property="Foreground"  Value="{StaticResource TextSecondaryBrush}"/>
+            <Setter Property="Margin"      Value="0,0,0,12"/>
+        </Style>
+
+        <!-- Card with hover lift -->
+        <Style x:Key="LiftCard" TargetType="Border">
+            <Setter Property="Background"      Value="#1F1F25"/>
+            <Setter Property="CornerRadius"    Value="10"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush"     Value="#26262C"/>
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+            <Setter Property="RenderTransform">
+                <Setter.Value><TranslateTransform Y="0"/></Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="#3A3A42"/>
+                    <Trigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)"
+                                                 To="-2" Duration="0:0:0.15">
+                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.EnterActions>
+                    <Trigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)"
+                                                 To="0" Duration="0:0:0.15">
+                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.ExitActions>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Page.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <ScrollViewer.Resources>
+            <Style TargetType="ScrollBar" BasedOn="{StaticResource AnchorScrollBarStyle}"/>
+        </ScrollViewer.Resources>
+
+        <StackPanel>
+            <!-- ══════════ HERO ══════════ -->
+            <Border Height="200" CornerRadius="16" ClipToBounds="True" Margin="32,28,32,0">
+                <Grid>
+                    <!-- Two wallpapers that crossfade every 5s (code-behind) -->
+                    <Image x:Name="HeroWallA" Source="pack://application:,,,/Assets/wallpaper_java.png"
+                           Stretch="UniformToFill" Opacity="0.5"
+                           RenderOptions.BitmapScalingMode="LowQuality">
+                        <Image.Effect><BlurEffect Radius="15" KernelType="Gaussian"/></Image.Effect>
+                    </Image>
+                    <Image x:Name="HeroWallB" Source="pack://application:,,,/Assets/wallpaper_bedrock.png"
+                           Stretch="UniformToFill" Opacity="0"
+                           RenderOptions.BitmapScalingMode="LowQuality">
+                        <Image.Effect><BlurEffect Radius="15" KernelType="Gaussian"/></Image.Effect>
+                    </Image>
+                    <Border>
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="#B30F0F13" Offset="0"/>
+                                <GradientStop Color="#E60F0F13" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                    </Border>
+
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Greeting}"
+                                   FontFamily="{StaticResource PrimaryFont}"
+                                   FontSize="{StaticResource FontSize3XL}" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="{Binding Subtitle}"
+                                   FontFamily="{StaticResource PrimaryFont}"
+                                   FontSize="{StaticResource FontSizeMD}"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   HorizontalAlignment="Center" Margin="0,4,0,16"/>
+
+                        <!-- Signed in → Quick Launch -->
+                        <Button Style="{StaticResource PrimaryButtonStyle}"
+                                Height="42" Padding="26,0" FontSize="14"
+                                Content="{Binding QuickLaunchLabel}"
+                                HorizontalAlignment="Center"
+                                Visibility="{Binding HasAccount, Converter={StaticResource BoolToVis}}"
+                                Command="{Binding QuickLaunchCommand}"/>
+
+                        <!-- Signed out → Sign in -->
+                        <Button Style="{StaticResource PrimaryButtonStyle}"
+                                Height="42" Padding="26,0" FontSize="14"
+                                Content="{Binding [home_signin], Source={x:Static loc:Loc.I}}"
+                                HorizontalAlignment="Center"
+                                Visibility="{Binding HasAccount, Converter={StaticResource InvBoolToVis}}"
+                                Command="{Binding SignInCommand}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ══════════ 3-COLUMN CONTENT GRID ══════════ -->
+            <Grid Margin="32,20,32,28">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="18"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="18"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- ── Column 1: CONTINUE PLAYING ── -->
+                <Border Grid.Column="0" Background="{StaticResource Surface1Brush}"
+                        CornerRadius="12" BorderBrush="{StaticResource Surface2Brush}"
+                        BorderThickness="1" Padding="18,16" MinHeight="320">
+                    <StackPanel>
+                        <TextBlock Text="{Binding [home_continue], Source={x:Static loc:Loc.I}}" Style="{StaticResource ColumnHeader}"/>
+
+                        <!-- Recent instances -->
+                        <ItemsControl ItemsSource="{Binding RecentInstances}"
+                                      Visibility="{Binding HasInstances, Converter={StaticResource BoolToVis}}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type mi:MinecraftInstance}">
+                                    <Border Style="{StaticResource LiftCard}" Margin="0,0,0,10" Padding="10">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Loader-coloured thumbnail tile -->
+                                            <Border Grid.Column="0" Width="44" Height="44" CornerRadius="8" ClipToBounds="True"
+                                                    Background="{Binding ModLoader, Converter={StaticResource LoaderBrush}}"
+                                                    VerticalAlignment="Center" Margin="0,0,12,0">
+                                                <Grid>
+                                                    <!-- Version label (when no icon is set) -->
+                                                    <TextBlock Text="{Binding Version}"
+                                                               FontFamily="{StaticResource PrimaryFont}"
+                                                               FontSize="10" FontWeight="SemiBold" Foreground="White"
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                               TextAlignment="Center" TextWrapping="Wrap" MaxWidth="40">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IconId}" Value="{x:Null}">
+                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                    <!-- Chosen icon (when set) -->
+                                                    <Image Source="{Binding IconId, Converter={StaticResource InstanceIcon}}"
+                                                           Width="40" Height="40" RenderOptions.BitmapScalingMode="HighQuality">
+                                                        <Image.Style>
+                                                            <Style TargetType="Image">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IconId}" Value="{x:Null}">
+                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Image.Style>
+                                                    </Image>
+                                                </Grid>
+                                            </Border>
+
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Name}"
+                                                           FontFamily="{StaticResource PrimaryFont}"
+                                                           FontSize="13" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding LoaderLabel}"
+                                                           FontFamily="{StaticResource PrimaryFont}"
+                                                           FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
+                                                           TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                            </StackPanel>
+
+                                            <Button Grid.Column="2" Style="{StaticResource PrimaryButtonStyle}"
+                                                    Height="30" Padding="14,0" FontSize="11" Content="{Binding [launch], Source={x:Static loc:Loc.I}}"
+                                                    VerticalAlignment="Center"
+                                                    Command="{Binding DataContext.LaunchInstanceCommand,
+                                                                      RelativeSource={RelativeSource AncestorType=Page}}"
+                                                    CommandParameter="{Binding}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Empty state -->
+                        <StackPanel Visibility="{Binding HasInstances, Converter={StaticResource InvBoolToVis}}"
+                                    Margin="0,18,0,0" HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding [home_no_instances], Source={x:Static loc:Loc.I}}"
+                                       FontFamily="{StaticResource PrimaryFont}" FontSize="13"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                            <Button Style="{StaticResource PrimaryButtonStyle}"
+                                    Height="34" Padding="18,0" FontSize="12"
+                                    Content="{Binding [home_create_first], Source={x:Static loc:Loc.I}}"
+                                    Command="{Binding NewInstanceCommand}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── Column 2: TRENDING TODAY ── -->
+                <Border Grid.Column="2" Background="{StaticResource Surface1Brush}"
+                        CornerRadius="12" BorderBrush="{StaticResource Surface2Brush}"
+                        BorderThickness="1" Padding="18,16" MinHeight="320">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource ColumnHeader}">
+                            <Run Text="{Binding [home_trending], Source={x:Static loc:Loc.I}, Mode=OneWay}"/><Run Text="  🔥"/>
+                        </TextBlock>
+
+                        <!-- Loading skeleton -->
+                        <StackPanel Visibility="{Binding IsLoadingMods, Converter={StaticResource BoolToVis}}">
+                            <Border Height="56" CornerRadius="8" Background="#1A1A20" Margin="0,0,0,10"/>
+                            <Border Height="56" CornerRadius="8" Background="#1A1A20" Margin="0,0,0,10"/>
+                            <Border Height="56" CornerRadius="8" Background="#1A1A20" Margin="0,0,0,10"/>
+                            <Border Height="56" CornerRadius="8" Background="#1A1A20"/>
+                        </StackPanel>
+
+                        <!-- Trending list -->
+                        <ItemsControl ItemsSource="{Binding TrendingMods}"
+                                      Visibility="{Binding IsLoadingMods, Converter={StaticResource InvBoolToVis}}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type mk:MarketplaceItem}">
+                                    <Border Style="{StaticResource LiftCard}" Margin="0,0,0,10" Padding="10">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Mod icon (placeholder square behind for null icons) -->
+                                            <Border Grid.Column="0" Width="40" Height="40" CornerRadius="8"
+                                                    Background="#232329" VerticalAlignment="Center" Margin="0,0,12,0"
+                                                    ClipToBounds="True">
+                                                <Grid>
+                                                    <Path Data="M9,3 H13 V6 A2,2 0 0 0 17,6 V3 H21 V7 H18 A2,2 0 0 0 18,11 H21 V21 H3 V11 H6 A2,2 0 0 0 6,7 H3 V3 Z"
+                                                          Fill="{StaticResource AccentBrush}" Opacity="0.85"
+                                                          Width="20" Height="20" Stretch="Uniform"
+                                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <Image Source="{Binding IconUrl}" Stretch="UniformToFill"
+                                                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                                                </Grid>
+                                            </Border>
+
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Name}"
+                                                           FontFamily="{StaticResource PrimaryFont}"
+                                                           FontSize="13" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding Description}"
+                                                           FontFamily="{StaticResource PrimaryFont}"
+                                                           FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
+                                                           TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                                <TextBlock FontFamily="{StaticResource PrimaryFont}"
+                                                           FontSize="10" Foreground="#6E6E76" Margin="0,3,0,0">
+                                                    <Run Text="{Binding DownloadsDisplay, Mode=OneWay}"/><Run Text=" downloads"/>
+                                                </TextBlock>
+                                            </StackPanel>
+
+                                            <Button Grid.Column="2" Style="{StaticResource GhostButtonStyle}"
+                                                    Height="30" Padding="12,0" FontSize="11" Content="{Binding [install], Source={x:Static loc:Loc.I}}"
+                                                    VerticalAlignment="Center" Margin="8,0,0,0"
+                                                    Command="{Binding DataContext.InstallModCommand,
+                                                                      RelativeSource={RelativeSource AncestorType=Page}}"
+                                                    CommandParameter="{Binding}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── Column 3: ANCHOR NEWS ── -->
+                <Border Grid.Column="4" Background="{StaticResource Surface1Brush}"
+                        CornerRadius="12" BorderBrush="{StaticResource Surface2Brush}"
+                        BorderThickness="1" Padding="18,16" MinHeight="320">
+                    <StackPanel>
+                        <TextBlock Text="{Binding [home_news], Source={x:Static loc:Loc.I}}" Style="{StaticResource ColumnHeader}"/>
+
+                        <ItemsControl ItemsSource="{Binding News}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type hm:NewsItem}">
+                                    <Border Style="{StaticResource LiftCard}" Margin="0,0,0,10" Padding="12">
+                                        <StackPanel>
+                                            <Border HorizontalAlignment="Left" CornerRadius="4" Padding="7,2"
+                                                    Background="{StaticResource AccentMutedBrush}" Margin="0,0,0,7">
+                                                <TextBlock Text="{Binding Date}"
+                                                           FontFamily="{StaticResource PrimaryFont}"
+                                                           FontSize="10" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource AccentBrush}"/>
+                                            </Border>
+                                            <TextBlock Text="{Binding Title}"
+                                                       FontFamily="{StaticResource PrimaryFont}"
+                                                       FontSize="13" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                       TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding Summary}"
+                                                       FontFamily="{StaticResource PrimaryFont}"
+                                                       FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
+                                                       TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ══════════ RECENT SCREENSHOTS ══════════ -->
+            <StackPanel Margin="32,0,32,8" Visibility="{Binding HasScreenshots, Converter={StaticResource BoolToVis}}">
+                <TextBlock Text="{Binding [home_recent_screenshots], Source={x:Static loc:Loc.I}}" Style="{StaticResource ColumnHeader}"/>
+                <ItemsControl ItemsSource="{Binding RecentScreenshots}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><UniformGrid Rows="1"/></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border CornerRadius="10" ClipToBounds="True" Height="150" Margin="0,0,12,0"
+                                    BorderBrush="{StaticResource Surface2Brush}" BorderThickness="1">
+                                <Image Source="{Binding}" Stretch="UniformToFill"
+                                       RenderOptions.BitmapScalingMode="HighQuality"/>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <!-- ══════════ SERVER FAVORITES ══════════ -->
+            <StackPanel Margin="32,18,32,28">
+                <TextBlock Text="{Binding [home_server_favorites], Source={x:Static loc:Loc.I}}" Style="{StaticResource ColumnHeader}"/>
+
+                <!-- Add-server row -->
+                <Border Background="{StaticResource Surface1Brush}" CornerRadius="10" Padding="12"
+                        BorderBrush="{StaticResource Surface2Brush}" BorderThickness="1" Margin="0,0,0,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="90"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Style="{StaticResource AnchorTextBoxStyle}" Height="34" Margin="0,0,8,0"
+                                 Tag="{Binding [ph_server_name], Source={x:Static loc:Loc.I}}" Text="{Binding NewServerName, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBox Grid.Column="1" Style="{StaticResource AnchorTextBoxStyle}" Height="34" Margin="0,0,8,0"
+                                 Tag="{Binding [ph_ip], Source={x:Static loc:Loc.I}}" Text="{Binding NewServerIp, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBox Grid.Column="2" Style="{StaticResource AnchorTextBoxStyle}" Height="34" Margin="0,0,8,0"
+                                 Tag="{Binding [ph_port], Source={x:Static loc:Loc.I}}" Text="{Binding NewServerPort, UpdateSourceTrigger=PropertyChanged}"/>
+                        <Button Grid.Column="3" Content="{Binding [add], Source={x:Static loc:Loc.I}}" Style="{StaticResource PrimaryButtonStyle}"
+                                Height="34" Padding="18,0" Command="{Binding AddServerCommand}"/>
+                    </Grid>
+                </Border>
+
+                <!-- Favorite cards -->
+                <ItemsControl ItemsSource="{Binding ServerFavorites}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type hm:ServerFavorite}">
+                            <Border Style="{StaticResource LiftCard}" Width="230" Margin="0,0,12,12" Padding="12">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Display}"
+                                                   FontFamily="{StaticResource PrimaryFont}" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding Address}"
+                                                   FontFamily="{StaticResource PrimaryFont}" FontSize="11"
+                                                   Foreground="{StaticResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="1" Content="{Binding [connect], Source={x:Static loc:Loc.I}}" Style="{StaticResource PrimaryButtonStyle}"
+                                            Height="28" Padding="12,0" FontSize="11" VerticalAlignment="Center"
+                                            Command="{Binding DataContext.ConnectServerCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                            CommandParameter="{Binding}"/>
+                                    <Button Grid.Column="2" Style="{StaticResource IconButtonStyle}" Width="26" Height="26"
+                                            Margin="4,0,0,0" VerticalAlignment="Center" ToolTip="Remove"
+                                            Command="{Binding DataContext.RemoveServerCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                            CommandParameter="{Binding}">
+                                        <Path Data="M 7,7 L 17,17 M 17,7 L 7,17" Stroke="{StaticResource TextSecondaryBrush}"
+                                              StrokeThickness="1.5" StrokeEndLineCap="Round" Width="11" Height="11" Stretch="Uniform"/>
+                                    </Button>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

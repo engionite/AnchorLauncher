@@ -1,0 +1,108 @@
+<Window x:Class="AnchorLauncher.Views.Instances.IconPickerDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        SizeToContent="Height"
+        Width="500"
+        ShowInTaskbar="False"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
+
+    <Border Background="#18181C"
+            BorderBrush="{StaticResource Surface2Brush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Margin="14"
+            MouseLeftButtonDown="Root_MouseDown">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="22" ShadowDepth="4" Direction="270" Opacity="0.55"/>
+        </Border.Effect>
+
+        <StackPanel Margin="22,20,22,18">
+            <!-- Header -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                <Border Width="26" Height="26" CornerRadius="6" Margin="0,0,10,0"
+                        Background="{StaticResource AccentMutedBrush}">
+                    <Image x:Name="PreviewImage" Width="20" Height="20"
+                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                </Border>
+                <TextBlock Text="Choose an icon"
+                           FontFamily="{StaticResource PrimaryFont}"
+                           FontSize="15" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimaryBrush}"
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+            <TextBlock Text="Pick a built-in icon or upload your own image — it shows on the instance card."
+                       FontFamily="{StaticResource PrimaryFont}" FontSize="12"
+                       Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,14"/>
+
+            <ListBox x:Name="IconList" SelectionMode="Single"
+                     Background="Transparent" BorderThickness="0"
+                     MaxHeight="320"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     SelectionChanged="IconList_SelectionChanged">
+                <ListBox.Resources>
+                    <Style TargetType="ScrollBar" BasedOn="{StaticResource AnchorScrollBarStyle}"/>
+                </ListBox.Resources>
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Margin" Value="4"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <Border x:Name="tile" Width="66" Height="66" CornerRadius="12"
+                                            Background="{StaticResource Surface1Brush}"
+                                            BorderBrush="#00000000" BorderThickness="2">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="tile" Property="BorderBrush" Value="{StaticResource Surface2Brush}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="tile" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                            <Setter TargetName="tile" Property="Background" Value="{StaticResource AccentMutedBrush}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Image Source="{Binding Image}" Width="42" Height="42"
+                               RenderOptions.BitmapScalingMode="HighQuality"
+                               ToolTip="{Binding Id}"/>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <!-- Footer -->
+            <Grid Margin="0,16,0,0">
+                <Button Content="Upload custom…" HorizontalAlignment="Left"
+                        Style="{StaticResource GhostButtonStyle}"
+                        Height="36" Padding="16,0"
+                        Click="BtnUpload_Click"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Cancel"
+                            Style="{StaticResource GhostButtonStyle}"
+                            Height="36" Padding="18,0" Margin="0,0,10,0"
+                            Click="BtnCancel_Click"/>
+                    <Button x:Name="BtnOk" Content="Use icon"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Height="36" Padding="22,0"
+                            Click="BtnOk_Click"/>
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+    </Border>
+</Window>

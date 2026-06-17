@@ -1,0 +1,80 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>AnchorLauncher</AssemblyName>
+    <RootNamespace>AnchorLauncher</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- WinForms enabled solely for the system-tray NotifyIcon (minimize-to-tray) -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <!-- WFAC010: WinForms advises moving DPI out of the manifest, but this is a WPF-primary app
+         that needs the manifest dpiAware/PerMonitorV2 for crisp Win11 rendering. Benign here. -->
+    <NoWarn>WFAC010</NoWarn>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+
+    <!-- Application icon (embedded in the exe) + Win10/11 manifest.
+         Multi-frame .ico (256/64/48/32/16, PNG-compressed) generated from
+         Assets\AnchorLauncherIcon.png by tools\Convert-PngToIco.ps1 -->
+    <ApplicationIcon>Assets\AnchorLauncherIcon.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <!-- Assembly metadata (generated into AssemblyInfo by the SDK — setting these as
+         properties avoids the CS0579 duplicate-attribute errors that hand-written
+         [assembly:] attributes cause in SDK-style projects with GenerateAssemblyInfo) -->
+    <AssemblyTitle>Anchor Launcher</AssemblyTitle>
+    <Description>Premium Minecraft Launcher</Description>
+    <Company>Simplexity Development</Company>
+    <Product>Anchor Launcher</Product>
+    <Copyright>© 2026 Simplexity Development. All rights reserved.</Copyright>
+    <Version>1.0.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+  </PropertyGroup>
+
+  <!-- CurseForge API key — injected at build time from the ANCHOR_CF_KEY environment variable
+       (or `-p:CurseForgeApiKey=...`). Deliberately NOT stored in source so it never lands in the
+       public repo. If empty, the launcher simply skips CurseForge results; Modrinth still works.
+       Build with the key:  $env:ANCHOR_CF_KEY="<key>"; dotnet publish ... -->
+  <PropertyGroup>
+    <CurseForgeApiKey Condition="'$(CurseForgeApiKey)' == ''">$(ANCHOR_CF_KEY)</CurseForgeApiKey>
+  </PropertyGroup>
+  <ItemGroup>
+    <AssemblyMetadata Include="CurseForgeApiKey" Value="$(CurseForgeApiKey)" />
+  </ItemGroup>
+
+  <!-- UseWindowsForms injects an implicit `using System.Windows.Forms;` that collides
+       with WPF types (Application, UserControl, KeyEventArgs, MouseEventArgs, DragEventArgs).
+       Drop the implicit global using — the tray code fully-qualifies System.Windows.Forms.* -->
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.65.0" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\AnchorLauncherIcon.jpg" />
+    <Resource Include="Assets\AnchorLauncherIcon.png" />
+    <Resource Include="Assets\wallpaper_java.png" />
+    <Resource Include="Assets\wallpaper_bedrock.png" />
+    <!-- Curated Minecraft imagery + brand icons (decorative / empty states / fallbacks) -->
+    <Resource Include="Assets\steve_skin.png" />
+    <Resource Include="Assets\minecraft_grass_block.png" />
+    <Resource Include="Assets\minecraft_diamond.png" />
+    <Resource Include="Assets\minecraft_crafting_table.png" />
+    <Resource Include="Assets\minecraft_enchanting_table.png" />
+    <Resource Include="Assets\minecraft_chest.png" />
+    <Resource Include="Assets\icons8-microsoft-48.png" />
+  </ItemGroup>
+
+</Project>

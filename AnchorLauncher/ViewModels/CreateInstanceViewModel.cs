@@ -1,0 +1,253 @@
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Threading;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using AnchorLauncher.Models.Instances;
+using AnchorLauncher.Services.Instances;
+
+namespace AnchorLauncher.ViewModels;
+
+public partial class CreateInstanceViewModel : ObservableObject
+{
+    private readonly MojangManifestService _manifest = new();
+    private readonly InstanceService       _instances = new();
+    private readonly ModLoaderService      _loaders   = new();
+
+    private MojangVersionManifest? _fullManifest;
+
+    [ObservableProperty] private string _instanceName = string.Empty;
+    [ObservableProperty] private ObservableCollection<MojangVersionEntry> _versions = new();
+    [ObservableProperty] private MojangVersionEntry? _selectedVersion;
+    [ObservableProperty] private ModLoaderType _selectedLoader = ModLoaderType.Vanilla;
+
+    // Loader version picker (shown only for non-Vanilla loaders)
+    [ObservableProperty] private bool _showLoaderVersions;
+    [ObservableProperty] private bool _isLoadingLoaderVersions;
+    [ObservableProperty] private ObservableCollection<string> _loaderVersions = new();
+    [ObservableProperty] private string? _selectedLoaderVersion;
+
+    private CancellationTokenSource? _loaderCts;
+    private int _loaderFetchSeq;   // monotonic guard: only the newest fetch may write results
+
+    // Successful responses cached per (loader, mcVersion) so switching back is instant
+    private readonly Dictionary<(ModLoaderType, string), List<LoaderVersion>> _loaderCache = new();
+
+    // Version-type filters
+    [ObservableProperty] private bool _showReleases  = true;
+    [ObservableProperty] private bool _showSnapshots;
+    [ObservableProperty] private bool _showBeta;
+    [ObservableProperty] private bool _showAlpha;
+
+    [ObservableProperty] private bool   _isLoadingVersions;
+    [ObservableProperty] private bool   _isCreating;
+    [ObservableProperty] private double _progress;
+    [ObservableProperty] private string _progressStatus = string.Empty;
+    [ObservableProperty] private string _errorMessage = string.Empty;
+
+    /// <summary>Raised with the finished instance once creation + install succeed.</summary>
+    public event EventHandler<MinecraftInstance>? Created;
+
+    // ── Version manifest ────────────────────────────────────────────────────────
+
+    [RelayCommand]
+    private async Task LoadVersionsAsync()
+    {
+        try
+        {
+            IsLoadingVersions = true;
+            ErrorMessage = string.Empty;
+            _fullManifest = await _manifest.GetManifestAsync();
+            if (_fullManifest == null)
+            {
+                ErrorMessage = "Could not load the version list (offline and no cache).";
+                return;
+            }
+            ApplyFilter();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[CreateVM] LoadVersionsAsync failed: {ex}");
+            ErrorMessage = "Failed to load versions.";
+        }
+        finally
+        {
+            IsLoadingVersions = false;
+        }
+    }
+
+    partial void OnShowReleasesChanged(bool value)  => ApplyFilter();
+    partial void OnShowSnapshotsChanged(bool value) => ApplyFilter();
+    partial void OnShowBetaChanged(bool value)      => ApplyFilter();
+    partial void OnShowAlphaChanged(bool value)     => ApplyFilter();
+
+    private void ApplyFilter()
+    {
+        if (_fullManifest == null) return;
+
+        var filtered = _fullManifest.Versions.Where(v =>
+            (ShowReleases  && v.IsRelease)  ||
+            (ShowSnapshots && v.IsSnapshot) ||
+            (ShowBeta      && v.IsBeta)     ||
+            (ShowAlpha     && v.IsAlpha));
+
+        Versions = new ObservableCollection<MojangVersionEntry>(filtered);
+        SelectedVersion = Versions.FirstOrDefault();
+    }
+
+    // ── Loader version picker ───────────────────────────────────────────────────
+
+    partial void OnSelectedLoaderChanged(ModLoaderType value) => _ = DebouncedRefreshAsync();
+
+    partial void OnSelectedVersionChanged(MojangVersionEntry? value)
+    {
+        if (SelectedLoader != ModLoaderType.Vanilla)
+            _ = DebouncedRefreshAsync();
+    }
+
+    /// <summary>
+    /// Debounces rapid loader/version switches (300ms), then refreshes. A monotonic sequence
+    /// number guarantees an in-flight stale fetch can never clobber a newer one, and the old
+    /// CTS is cancelled+disposed atomically before the new fetch starts.
+    /// </summary>
+    private async Task DebouncedRefreshAsync()
+    {
+        var seq = Interlocked.Increment(ref _loaderFetchSeq);
+
+        // Swap in a fresh CTS, atomically retiring the previous fetch
+        var fresh = new CancellationTokenSource();
+        var old   = Interlocked.Exchange(ref _loaderCts, fresh);
+        try { old?.Cancel(); old?.Dispose(); } catch { }
+        var ct = fresh.Token;
+
+        // Clear any stale "no versions" error whenever the loader or MC version changes
+        ErrorMessage = string.Empty;
+
+        if (SelectedLoader == ModLoaderType.Vanilla || SelectedVersion == null)
+        {
+            ShowLoaderVersions    = false;
+            LoaderVersions        = new ObservableCollection<string>();
+            SelectedLoaderVersion = null;
+            return;
+        }
+
+        var loader    = SelectedLoader;
+        var mcVersion = SelectedVersion.Id;
+
+        ShowLoaderVersions = true;
+
+        // Cache hit → instant, no spinner, no network
+        if (_loaderCache.TryGetValue((loader, mcVersion), out var cached))
+        {
+            ApplyLoaderList(cached, loader, mcVersion);
+            IsLoadingLoaderVersions = false;
+            return;
+        }
+
+        try
+        {
+            IsLoadingLoaderVersions = true;
+            SelectedLoaderVersion   = null;
+            LoaderVersions          = new ObservableCollection<string>();
+
+            // 300ms debounce: absorb rapid version-list scrolling before hitting the network
+            await Task.Delay(300, ct);
+
+            var list = await _loaders.GetLoaderVersionsAsync(loader, mcVersion, ct);
+
+            // Stale guard: a newer selection has superseded this fetch
+            if (seq != _loaderFetchSeq || ct.IsCancellationRequested) return;
+
+            if (list.Count > 0)
+                _loaderCache[(loader, mcVersion)] = list;
+
+            ApplyLoaderList(list, loader, mcVersion);
+        }
+        catch (OperationCanceledException) { /* superseded — newest fetch owns the UI */ }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[CreateVM] DebouncedRefreshAsync failed: {ex}");
+            if (seq == _loaderFetchSeq)
+                ErrorMessage = "Could not load loader versions.";
+        }
+        finally
+        {
+            // Only the newest fetch may clear the spinner
+            if (seq == _loaderFetchSeq)
+                IsLoadingLoaderVersions = false;
+        }
+    }
+
+    private void ApplyLoaderList(List<LoaderVersion> list, ModLoaderType loader, string mcVersion)
+    {
+        LoaderVersions        = new ObservableCollection<string>(list.Select(v => v.Version));
+        SelectedLoaderVersion = list.FirstOrDefault(v => v.Stable)?.Version ?? LoaderVersions.FirstOrDefault();
+
+        if (LoaderVersions.Count == 0)
+            ErrorMessage = $"No {loader} versions available for {mcVersion} yet. Try an older Minecraft version.";
+    }
+
+    // ── Create ──────────────────────────────────────────────────────────────────
+
+    [RelayCommand]
+    private async Task CreateAsync()
+    {
+        if (IsCreating) return;
+
+        if (string.IsNullOrWhiteSpace(InstanceName))
+        {
+            ErrorMessage = "Enter an instance name.";
+            return;
+        }
+        if (SelectedVersion == null)
+        {
+            ErrorMessage = "Select a Minecraft version.";
+            return;
+        }
+        if (SelectedLoader != ModLoaderType.Vanilla && string.IsNullOrEmpty(SelectedLoaderVersion))
+        {
+            ErrorMessage = "Select a loader version.";
+            return;
+        }
+
+        try
+        {
+            IsCreating   = true;
+            ErrorMessage = string.Empty;
+            Progress     = 0;
+            ProgressStatus = "Creating instance…";
+
+            var progress = new Progress<DownloadProgress>(p =>
+            {
+                Progress       = p.Percent;
+                ProgressStatus = p.Status;
+            });
+
+            var loaderVersion = SelectedLoader == ModLoaderType.Vanilla ? null : SelectedLoaderVersion;
+            var instance = await _instances.CreateAsync(
+                InstanceName.Trim(), SelectedVersion.Id, SelectedVersion.Type,
+                SelectedLoader, loaderVersion);
+
+            if (SelectedLoader != ModLoaderType.Vanilla)
+            {
+                instance.Status = InstanceStatus.Installing;
+                ProgressStatus  = $"Installing {SelectedLoader}…";
+                await _loaders.InstallAsync(instance, progress);
+                await _instances.SaveAsync(instance); // persist LaunchVersionId/loader version
+            }
+
+            instance.Status = InstanceStatus.Idle;
+            ProgressStatus  = "Done.";
+            Created?.Invoke(this, instance);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[CreateVM] CreateAsync failed: {ex}");
+            ErrorMessage = $"Creation failed: {ex.Message}";
+        }
+        finally
+        {
+            IsCreating = false;
+        }
+    }
+}

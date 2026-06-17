@@ -1,0 +1,26 @@
+# ── Build output ──
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+.vs/
+
+# ── Published / distributable binaries (upload these as Release assets, not commits) ──
+/publish/
+/publish-selfcontained/
+*.exe
+*.pdb
+
+# ── Internal / dev-only material — NOT for the public repo ──
+/Instructions/
+/rendertest/
+/tools/
+PROGRESS.md
+
+# ── Logs & scratch ──
+*.log
+**/anchor_debug/
+
+# ── OS ──
+Thumbs.db
+.DS_Store

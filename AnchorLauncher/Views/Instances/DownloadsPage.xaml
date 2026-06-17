@@ -1,0 +1,397 @@
+<Page x:Class="AnchorLauncher.Views.Instances.DownloadsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:conv="clr-namespace:AnchorLauncher.Converters"
+      xmlns:vm="clr-namespace:AnchorLauncher.ViewModels"
+      xmlns:mk="clr-namespace:AnchorLauncher.Models.Marketplace"
+      xmlns:loc="clr-namespace:AnchorLauncher.Services.Platform"
+      Background="{StaticResource AppBackgroundBrush}"
+      Title="Marketplace"
+      TextOptions.TextFormattingMode="Display"
+      TextOptions.TextRenderingMode="ClearType">
+
+    <Page.DataContext>
+        <vm:MarketplaceViewModel/>
+    </Page.DataContext>
+
+    <Page.Resources>
+        <BooleanToVisibilityConverter          x:Key="BoolToVis"/>
+        <conv:InverseBoolToVisibilityConverter x:Key="InvBoolToVis"/>
+        <conv:EnumToBooleanConverter           x:Key="EnumToBool"/>
+        <conv:ModSourceToBrushConverter        x:Key="SourceBrush"/>
+        <conv:SortModeToStringConverter        x:Key="SortName"/>
+        <conv:InstallStateToTextConverter      x:Key="InstallStateName"/>
+
+        <!-- Small toggle pill for "Compatible only" -->
+        <Style x:Key="CompatToggle" TargetType="ToggleButton">
+            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
+            <Setter Property="FontSize"   Value="11"/>
+            <Setter Property="Cursor"     Value="Hand"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="bg" CornerRadius="6" Padding="10,0" Height="36"
+                                Background="{StaticResource Surface1Brush}"
+                                BorderBrush="{StaticResource Surface2Brush}" BorderThickness="1">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border x:Name="dot" Width="8" Height="8" CornerRadius="4"
+                                        Background="{StaticResource TextDisabledBrush}"
+                                        VerticalAlignment="Center" Margin="0,0,7,0"/>
+                                <ContentPresenter VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="bg"  Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                <Setter TargetName="dot" Property="Background"  Value="{StaticResource SuccessBrush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Filter chip -->
+        <Style x:Key="FilterChip" TargetType="ToggleButton">
+            <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
+            <Setter Property="FontSize"   Value="12"/>
+            <Setter Property="Cursor"     Value="Hand"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+            <Setter Property="Margin"     Value="0,0,8,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="bg" CornerRadius="15" Padding="14,7"
+                                Background="{StaticResource Surface1Brush}"
+                                BorderBrush="{StaticResource Surface2Brush}" BorderThickness="1">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="bg" Property="Background" Value="{StaticResource AccentMutedBrush}"/>
+                                <Setter TargetName="bg" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Result row container (no selection chrome) -->
+        <Style x:Key="ResultItem" TargetType="ListBoxItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding"    Value="0"/>
+            <Setter Property="Focusable"  Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <ContentPresenter/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
+
+    <Grid Margin="32,28,32,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>   <!-- header -->
+            <RowDefinition Height="Auto"/>   <!-- search + chips -->
+            <RowDefinition Height="*"/>      <!-- results -->
+        </Grid.RowDefinitions>
+
+        <!-- ══ Hero header ══ -->
+        <Border Grid.Row="0" Height="120" CornerRadius="12" ClipToBounds="True" Margin="0,0,0,18">
+            <Grid>
+                <Image Source="pack://application:,,,/Assets/wallpaper_java.png"
+                       Stretch="UniformToFill" RenderOptions.BitmapScalingMode="LowQuality">
+                    <Image.Effect><BlurEffect Radius="20" KernelType="Gaussian"/></Image.Effect>
+                </Image>
+                <Border Background="#990F0F13"/>
+                <Border>
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="#E60F0F13" Offset="0"/>
+                            <GradientStop Color="#660F0F13" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
+
+                <Grid Margin="24,0">
+                    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding [marketplace], Source={x:Static loc:Loc.I}}"
+                                   FontFamily="{StaticResource PrimaryFont}"
+                                   FontSize="28" FontWeight="Bold">
+                            <TextBlock.Foreground>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#FFFFFF" Offset="0"/>
+                                    <GradientStop Color="#FF7A45" Offset="1"/>
+                                </LinearGradientBrush>
+                            </TextBlock.Foreground>
+                        </TextBlock>
+                        <TextBlock Text="{Binding [mp_sub], Source={x:Static loc:Loc.I}}"
+                                   FontFamily="{StaticResource PrimaryFont}" FontSize="{StaticResource FontSizeMD}"
+                                   Foreground="{StaticResource TextSecondaryBrush}" Margin="2,4,0,0"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding [mp_install_into], Source={x:Static loc:Loc.I}}" VerticalAlignment="Center" Margin="0,0,10,0"
+                                   FontFamily="{StaticResource PrimaryFont}" FontSize="12"
+                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <ComboBox Style="{StaticResource AnchorComboBoxStyle}" Width="220"
+                                  ItemsSource="{Binding Instances}" SelectedItem="{Binding SelectedInstance}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- ══ Search + filter chips ══ -->
+        <StackPanel Grid.Row="1" Margin="0,0,0,16">
+            <Grid Margin="0,0,0,12">
+                <TextBox Style="{StaticResource AnchorTextBoxStyle}" Height="42"
+                         Foreground="#FFFFFF" CaretBrush="#FFFFFF" FontSize="14"
+                         Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock IsHitTestVisible="False" Margin="12,0,0,0" VerticalAlignment="Center"
+                           FontFamily="{StaticResource PrimaryFont}" FontSize="14" Foreground="#55555A"
+                           Text="{Binding [mp_search], Source={x:Static loc:Loc.I}}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SearchQuery}" Value="">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
+
+            <!-- Sort + version filter + compatibility bar -->
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="{Binding [sort], Source={x:Static loc:Loc.I}}" VerticalAlignment="Center" Margin="0,0,8,0"
+                           FontFamily="{StaticResource PrimaryFont}" FontSize="11"
+                           Foreground="{StaticResource TextDisabledBrush}"/>
+                <ComboBox Grid.Column="1" Style="{StaticResource AnchorComboBoxStyle}" Width="170"
+                          ItemsSource="{Binding SortModes}"
+                          SelectedItem="{Binding SelectedSort}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Converter={StaticResource SortName}}"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <TextBlock Grid.Column="2" Text="{Binding [version], Source={x:Static loc:Loc.I}}" VerticalAlignment="Center" Margin="16,0,8,0"
+                           FontFamily="{StaticResource PrimaryFont}" FontSize="11"
+                           Foreground="{StaticResource TextDisabledBrush}"/>
+                <ComboBox Grid.Column="3" Style="{StaticResource AnchorComboBoxStyle}" Width="130"
+                          ItemsSource="{Binding GameVersions}"
+                          SelectedItem="{Binding SelectedGameVersion}"/>
+
+                <ToggleButton Grid.Column="4" Style="{StaticResource CompatToggle}"
+                              Content="{Binding [mp_compatible], Source={x:Static loc:Loc.I}}" Margin="16,0,0,0"
+                              IsChecked="{Binding CompatibleOnly}"
+                              ToolTip="Only show results that explicitly support the selected instance's version and mod loader"/>
+            </Grid>
+
+            <WrapPanel>
+                <ToggleButton Style="{StaticResource FilterChip}" Content="{Binding [tab_mods], Source={x:Static loc:Loc.I}}"
+                              IsChecked="{Binding SelectedType, Converter={StaticResource EnumToBool}, ConverterParameter=Mod}"/>
+                <ToggleButton Style="{StaticResource FilterChip}" Content="{Binding [tab_modpacks], Source={x:Static loc:Loc.I}}"
+                              IsChecked="{Binding SelectedType, Converter={StaticResource EnumToBool}, ConverterParameter=Modpack}"/>
+                <ToggleButton Style="{StaticResource FilterChip}" Content="{Binding [tab_resource_packs], Source={x:Static loc:Loc.I}}"
+                              IsChecked="{Binding SelectedType, Converter={StaticResource EnumToBool}, ConverterParameter=ResourcePack}"/>
+                <ToggleButton Style="{StaticResource FilterChip}" Content="{Binding [tab_shaders], Source={x:Static loc:Loc.I}}"
+                              IsChecked="{Binding SelectedType, Converter={StaticResource EnumToBool}, ConverterParameter=Shader}"/>
+            </WrapPanel>
+
+            <!-- Eligibility notice: only shown when the selected instance genuinely can't load this content -->
+            <Border Margin="0,10,0,0" CornerRadius="8" Padding="12,9"
+                    Background="#2A2113" BorderBrush="#5C4A1E" BorderThickness="1"
+                    Visibility="{Binding HasEligibilityWarning, Converter={StaticResource BoolToVis}}">
+                <StackPanel Orientation="Horizontal">
+                    <Path Data="M 12,3 L 22,21 L 2,21 Z M 12,10 V 15 M 12,17.6 V 18"
+                          Stroke="{StaticResource WarningBrush}" StrokeThickness="1.5"
+                          StrokeLineJoin="Round" StrokeEndLineCap="Round"
+                          Width="18" Height="18" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock Text="{Binding EligibilityWarning}"
+                               FontFamily="{StaticResource PrimaryFont}" FontSize="12"
+                               Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap"
+                               VerticalAlignment="Center" MaxWidth="640"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <!-- ══ Results ══ -->
+        <Grid Grid.Row="2">
+            <ListBox ItemsSource="{Binding Results}"
+                     ItemContainerStyle="{StaticResource ResultItem}"
+                     Background="Transparent" BorderThickness="0"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.ScrollChanged="Results_ScrollChanged"
+                     VirtualizingPanel.IsVirtualizing="True"
+                     VirtualizingPanel.VirtualizationMode="Recycling">
+                <ListBox.Resources>
+                    <Style TargetType="ScrollBar" BasedOn="{StaticResource AnchorScrollBarStyle}"/>
+                </ListBox.Resources>
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type mk:MarketplaceItem}">
+                        <Border Background="{StaticResource Surface1Brush}" CornerRadius="10"
+                                Padding="14" Margin="0,0,0,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Icon (puzzle-piece placeholder shows when no icon URL) -->
+                                <Border Grid.Column="0" Width="52" Height="52" CornerRadius="8"
+                                        Background="{StaticResource Surface2Brush}" Margin="0,0,14,0"
+                                        ClipToBounds="True" VerticalAlignment="Top">
+                                    <Grid>
+                                        <Path Data="M9,3 a2,2 0 0 1 4,0 v1 h3 a1,1 0 0 1 1,1 v3 h1 a2,2 0 0 1 0,4 h-1 v3 a1,1 0 0 1 -1,1 h-3 v-1 a2,2 0 0 0 -4,0 v1 h-3 a1,1 0 0 1 -1,-1 v-3 h-1 a2,2 0 0 1 0,-4 h1 v-3 a1,1 0 0 1 1,-1 h3 z"
+                                              Fill="{StaticResource AccentBrush}" Opacity="0.85"
+                                              Width="24" Height="24" Stretch="Uniform"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <Image Source="{Binding IconUrl}" Stretch="UniformToFill"
+                                               RenderOptions.BitmapScalingMode="HighQuality"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Info -->
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Name}"
+                                                   FontFamily="{StaticResource PrimaryFont}" FontSize="14"
+                                                   FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"
+                                                   TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                        <Border CornerRadius="4" Padding="6,2" Margin="10,0,0,0"
+                                                Background="{Binding Source, Converter={StaticResource SourceBrush}}"
+                                                VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding SourceLabel}" FontSize="9" FontWeight="SemiBold"
+                                                       Foreground="White"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding Author}"
+                                               FontFamily="{StaticResource PrimaryFont}" FontSize="11"
+                                               Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0"/>
+                                    <TextBlock Text="{Binding Description}"
+                                               FontFamily="{StaticResource PrimaryFont}" FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               TextTrimming="CharacterEllipsis" Margin="0,4,12,0"/>
+                                    <TextBlock Text="{Binding Versions}"
+                                               FontFamily="{StaticResource PrimaryFont}" FontSize="10"
+                                               Foreground="{StaticResource TextDisabledBrush}"
+                                               TextTrimming="CharacterEllipsis" Margin="0,4,12,0"/>
+                                </StackPanel>
+
+                                <!-- Meta + install -->
+                                <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,10">
+                                        <Path Data="M 8,2 V 12 M 4,9 L 8,13 L 12,9 M 3,15 H 13"
+                                              Stroke="{StaticResource TextDisabledBrush}" StrokeThickness="1.4"
+                                              StrokeLineJoin="Round" Width="12" Height="12" Stretch="Uniform"
+                                              VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                        <TextBlock Text="{Binding DownloadsDisplay}"
+                                                   FontFamily="{StaticResource PrimaryFont}" FontSize="12"
+                                                   Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+
+                                    <Button Width="98" Height="32" FontSize="12"
+                                            Content="{Binding State, Converter={StaticResource InstallStateName}}"
+                                            Command="{Binding DataContext.InstallCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                            CommandParameter="{Binding}">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding State}" Value="{x:Static mk:InstallState.Installing}">
+                                                        <Setter Property="IsEnabled" Value="False"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding State}" Value="{x:Static mk:InstallState.Installed}">
+                                                        <Setter Property="IsEnabled" Value="False"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <!-- Loading veil (initial / new search) -->
+            <Border Background="#660F0F13"
+                    Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+                <ProgressBar Style="{StaticResource AnchorProgressBarStyle}"
+                             IsIndeterminate="True" Width="220" Height="3"
+                             VerticalAlignment="Center" HorizontalAlignment="Center"/>
+            </Border>
+
+            <!-- Empty state -->
+            <TextBlock Text="{Binding [mp_no_results], Source={x:Static loc:Loc.I}}"
+                       FontFamily="{StaticResource PrimaryFont}" FontSize="13"
+                       Foreground="{StaticResource TextDisabledBrush}"
+                       HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding HasResults}" Value="False"/>
+                                    <Condition Binding="{Binding IsLoading}"  Value="False"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+            <!-- Load-more spinner -->
+            <ProgressBar Style="{StaticResource AnchorProgressBarStyle}"
+                         IsIndeterminate="True" Width="160" Height="3"
+                         VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,10"
+                         Visibility="{Binding IsLoadingMore, Converter={StaticResource BoolToVis}}"/>
+
+            <!-- Status toast -->
+            <Border VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,16"
+                    Background="{StaticResource Surface2Brush}" CornerRadius="6" Padding="14,8">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Visible"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding StatusMessage}" Value="">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <TextBlock Text="{Binding StatusMessage}"
+                           FontFamily="{StaticResource PrimaryFont}" FontSize="12"
+                           Foreground="{StaticResource TextPrimaryBrush}"/>
+            </Border>
+        </Grid>
+    </Grid>
+</Page>

@@ -1,0 +1,680 @@
+<Page x:Class="AnchorLauncher.Views.Instances.InstancesPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:conv="clr-namespace:AnchorLauncher.Converters"
+      xmlns:mi="clr-namespace:AnchorLauncher.Models.Instances"
+      xmlns:loc="clr-namespace:AnchorLauncher.Services.Platform"
+      Background="{StaticResource AppBackgroundBrush}"
+      Title="Instances"
+      TextOptions.TextFormattingMode="Display"
+      TextOptions.TextRenderingMode="ClearType">
+
+    <Page.Resources>
+        <BooleanToVisibilityConverter        x:Key="BoolToVis"/>
+        <conv:InverseBoolToVisibilityConverter x:Key="InvBoolToVis"/>
+        <conv:ModLoaderToBrushConverter        x:Key="LoaderBrush"/>
+        <conv:LogLevelToBrushConverter         x:Key="LogBrush"/>
+        <conv:NotEmptyToVisibilityConverter    x:Key="NotEmptyToVis"/>
+        <conv:RamPercentToBrushConverter       x:Key="RamBrush"/>
+        <conv:VersionStatusConverter           x:Key="VerStatus"/>
+        <conv:InstanceIconConverter            x:Key="InstanceIcon"/>
+    </Page.Resources>
+
+    <Grid>
+        <!-- ══════════ BEDROCK MODE (shown instead of Java instances) ══════════ -->
+        <ContentControl x:Name="BedrockHost" Visibility="Collapsed" Margin="32,28,32,28"/>
+
+        <!-- ══════════ MAIN CONTENT ══════════ -->
+        <Grid x:Name="JavaContent" Margin="32,28,32,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>   <!-- Header -->
+                <RowDefinition Height="*"/>      <!-- Grid / empty state -->
+            </Grid.RowDefinitions>
+
+            <!-- Hero header (blurred wallpaper strip; text stays sharp) -->
+            <Border Grid.Row="0" Height="120" CornerRadius="12" ClipToBounds="True" Margin="0,0,0,20">
+                <Grid>
+                    <Image Source="pack://application:,,,/Assets/wallpaper_java.png"
+                           Stretch="UniformToFill" RenderOptions.BitmapScalingMode="LowQuality">
+                        <Image.Effect>
+                            <BlurEffect Radius="20" KernelType="Gaussian"/>
+                        </Image.Effect>
+                    </Image>
+                    <!-- 60% darken overlay + left-edge gradient for text contrast -->
+                    <Border Background="#990F0F13"/>
+                    <Border>
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#E60F0F13" Offset="0"/>
+                                <GradientStop Color="#660F0F13" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                    </Border>
+
+                    <Grid Margin="24,0">
+                        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding [instances_title], Source={x:Static loc:Loc.I}}"
+                                       FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="{StaticResource FontSize3XL}"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                            <TextBlock Text="{Binding [instances_sub], Source={x:Static loc:Loc.I}}"
+                                       FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="{StaticResource FontSizeMD}"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       Margin="0,4,0,0"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <Button x:Name="BtnImport"
+                                    Style="{StaticResource GhostButtonStyle}"
+                                    Height="40" Padding="16,0" Margin="0,0,10,0"
+                                    Click="BtnImport_Click"
+                                    ToolTip="Import a Modrinth modpack (.mrpack)">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="M 12,3 V 15 M 7,10 L 12,15 L 17,10 M 4,20 H 20"
+                                          Stroke="{StaticResource TextSecondaryBrush}" StrokeThickness="1.8"
+                                          StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                          Width="14" Height="14" Stretch="Uniform"
+                                          VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="{Binding [ci_import], Source={x:Static loc:Loc.I}}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="BtnNewInstance"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Height="40" Padding="18,0"
+                                    Click="BtnNewInstance_Click">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="M 12,4 V 20 M 4,12 H 20"
+                                          Stroke="White" StrokeThickness="2" StrokeEndLineCap="Round"
+                                          Width="13" Height="13" Stretch="Uniform"
+                                          VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="{Binding [ci_title], Source={x:Static loc:Loc.I}}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- Empty state -->
+            <StackPanel Grid.Row="1"
+                        VerticalAlignment="Center" HorizontalAlignment="Center"
+                        Margin="0,0,0,60"
+                        Visibility="{Binding HasInstances, Converter={StaticResource InvBoolToVis}}">
+                <Border Width="84" Height="84" CornerRadius="20"
+                        Background="{StaticResource Surface1Brush}"
+                        HorizontalAlignment="Center" Margin="0,0,0,20">
+                    <Image Source="pack://application:,,,/Assets/minecraft_grass_block.png"
+                           Width="46" Height="46" RenderOptions.BitmapScalingMode="NearestNeighbor"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Text="No instances yet"
+                           FontFamily="{StaticResource PrimaryFont}"
+                           FontSize="{StaticResource FontSizeLG}" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimaryBrush}"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Create your first instance to start playing"
+                           FontFamily="{StaticResource PrimaryFont}"
+                           FontSize="{StaticResource FontSizeMD}"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           HorizontalAlignment="Center" Margin="0,6,0,18"/>
+                <Button Style="{StaticResource PrimaryButtonStyle}"
+                        Content="Create Instance"
+                        Height="38" Padding="20,0"
+                        HorizontalAlignment="Center"
+                        Click="BtnNewInstance_Click"/>
+            </StackPanel>
+
+            <!-- Card grid -->
+            <ScrollViewer Grid.Row="1"
+                          Style="{StaticResource AnchorScrollViewerStyle}"
+                          VerticalScrollBarVisibility="Auto"
+                          Visibility="{Binding HasInstances, Converter={StaticResource BoolToVis}}">
+                <ItemsControl ItemsSource="{Binding Instances}" Margin="0,0,0,24">
+                    <ItemsControl.Style>
+                        <Style TargetType="ItemsControl">
+                            <!-- Grid view (default): wrapping tiles -->
+                            <Setter Property="ItemsPanel">
+                                <Setter.Value>
+                                    <ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <!-- List view: one wide card per row -->
+                                <DataTrigger Binding="{Binding IsListView}" Value="True">
+                                    <Setter Property="ItemsPanel">
+                                        <Setter.Value>
+                                            <ItemsPanelTemplate><StackPanel Orientation="Vertical"/></ItemsPanelTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ItemsControl.Style>
+
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type mi:MinecraftInstance}">
+                            <Border x:Name="CardRoot"
+                                    Width="{Binding DataContext.CardWidth, RelativeSource={RelativeSource AncestorType=Page}}"
+                                    Height="192"
+                                    Margin="0,0,16,16" CornerRadius="12" ClipToBounds="True"
+                                    BorderThickness="1" BorderBrush="#00000000"
+                                    RenderTransformOrigin="0.5,0.5">
+                                <Border.RenderTransform>
+                                    <TransformGroup>
+                                        <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                        <TranslateTransform Y="0"/>
+                                    </TransformGroup>
+                                </Border.RenderTransform>
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0.4,1">
+                                        <GradientStop Color="#1C1C22" Offset="0"/>
+                                        <GradientStop Color="#0F0F13" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <Border.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Edit"           Click="MenuEdit_Click"/>
+                                        <MenuItem Header="Set Icon…"      Click="MenuSetIcon_Click"/>
+                                        <MenuItem Header="Switch Version" Click="MenuSwitchVersion_Click"/>
+                                        <MenuItem Header="Undo Last Switch" Click="MenuUndoSwitch_Click"
+                                                  Visibility="{Binding HasSwitchSnapshot, Converter={StaticResource BoolToVis}}"/>
+                                        <MenuItem Header="Clone"          Click="MenuClone_Click"/>
+                                        <MenuItem Header="Export (.zip)"  Click="MenuExport_Click"/>
+                                        <MenuItem Header="Delete"         Click="MenuDelete_Click"/>
+                                    </ContextMenu>
+                                </Border.ContextMenu>
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Style.Triggers>
+                                            <!-- Hover lift: translate up, slight scale, subtle accent glow -->
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="BorderBrush" Value="#66FF4500"/>
+                                                <Setter Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect Color="#FF4500" BlurRadius="16" ShadowDepth="0" Opacity="0.3"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Trigger.EnterActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.Children[1].(TranslateTransform.Y)"
+                                                                             To="-4" Duration="0:0:0.15"><DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction></DoubleAnimation>
+                                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.Children[0].(ScaleTransform.ScaleX)"
+                                                                             To="1.02" Duration="0:0:0.15"/>
+                                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.Children[0].(ScaleTransform.ScaleY)"
+                                                                             To="1.02" Duration="0:0:0.15"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.EnterActions>
+                                                <Trigger.ExitActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.Children[1].(TranslateTransform.Y)"
+                                                                             To="0" Duration="0:0:0.15"><DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction></DoubleAnimation>
+                                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.Children[0].(ScaleTransform.ScaleX)"
+                                                                             To="1" Duration="0:0:0.15"/>
+                                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.Children[0].(ScaleTransform.ScaleY)"
+                                                                             To="1" Duration="0:0:0.15"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.ExitActions>
+                                            </Trigger>
+                                            <!-- Accent glow on the running instance (overrides hover) -->
+                                            <DataTrigger Binding="{Binding Status}" Value="{x:Static mi:InstanceStatus.Running}">
+                                                <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                                <Setter Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect Color="#FF4500" BlurRadius="20" ShadowDepth="0" Opacity="0.55"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+
+                                <Grid>
+                                    <!-- Blurred Minecraft wallpaper atmosphere behind everything -->
+                                    <Image Source="pack://application:,,,/Assets/wallpaper_java.png"
+                                           Stretch="UniformToFill" IsHitTestVisible="False"
+                                           RenderOptions.BitmapScalingMode="LowQuality">
+                                        <Image.Effect><BlurEffect Radius="8" KernelType="Gaussian"/></Image.Effect>
+                                    </Image>
+                                    <Border IsHitTestVisible="False">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                <GradientStop Color="#99000000" Offset="0"/>
+                                                <GradientStop Color="#DD0F0F13" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                    </Border>
+
+                                    <!-- Name watermark — large, faded, centered behind content -->
+                                    <TextBlock Text="{Binding Name}"
+                                               FontFamily="{StaticResource PrimaryFont}"
+                                               FontSize="72" FontWeight="Bold"
+                                               Foreground="#FFFFFF" Opacity="0.15"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               IsHitTestVisible="False"
+                                               TextTrimming="None" TextWrapping="NoWrap"
+                                               Visibility="{Binding DataContext.ShowInstanceNames, RelativeSource={RelativeSource AncestorType=Page}, Converter={StaticResource BoolToVis}}"/>
+
+                                    <!-- Bottom readability scrim (Transparent → #CC0F0F13) -->
+                                    <Border VerticalAlignment="Bottom" Height="110" IsHitTestVisible="False">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                <GradientStop Color="#000F0F13" Offset="0"/>
+                                                <GradientStop Color="#CC0F0F13" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                    </Border>
+
+                                    <!-- Loader chip (semi-transparent pill, top-left) -->
+                                    <Border HorizontalAlignment="Left" VerticalAlignment="Top"
+                                            Margin="12,12,0,0" CornerRadius="11" Padding="9,3" Opacity="0.92"
+                                            Background="{Binding ModLoader, Converter={StaticResource LoaderBrush}}">
+                                        <TextBlock Text="{Binding LoaderLabel}"
+                                                   FontFamily="{StaticResource PrimaryFont}"
+                                                   FontSize="10" FontWeight="SemiBold" Foreground="White"/>
+                                    </Border>
+
+                                    <!-- Running pill (top-right) -->
+                                    <Border HorizontalAlignment="Right" VerticalAlignment="Top"
+                                            Margin="0,12,12,0" CornerRadius="9" Padding="8,3" Background="#2610B981">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Status}" Value="{x:Static mi:InstanceStatus.Running}">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse Width="6" Height="6" Fill="{StaticResource SuccessBrush}"
+                                                     VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                            <TextBlock Text="Running" FontSize="10" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource SuccessBrush}"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Icon + name + version, bottom-left -->
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" HorizontalAlignment="Left"
+                                                Margin="14,0,14,13">
+                                        <Border Width="44" Height="44" CornerRadius="9" Margin="0,0,11,0" VerticalAlignment="Center"
+                                                Background="#33000000">
+                                            <Image Source="{Binding IconId, Converter={StaticResource InstanceIcon}}"
+                                                   Width="36" Height="36" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                        </Border>
+                                        <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Name}"
+                                                   FontFamily="{StaticResource PrimaryFont}"
+                                                   FontSize="15" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                                   TextTrimming="CharacterEllipsis" MaxWidth="150"
+                                                   Visibility="{Binding DataContext.ShowInstanceNames, RelativeSource={RelativeSource AncestorType=Page}, Converter={StaticResource BoolToVis}}"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                            <TextBlock Text="{Binding Version}"
+                                                       FontFamily="{StaticResource PrimaryFont}"
+                                                       FontSize="{StaticResource FontSizeSM}"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       VerticalAlignment="Center"/>
+                                            <!-- Version freshness badge -->
+                                            <Border CornerRadius="4" Padding="6,1" Margin="7,0,0,0" VerticalAlignment="Center"
+                                                    Visibility="{Binding VersionStatus, Converter={StaticResource VerStatus}, ConverterParameter=vis}"
+                                                    Background="{Binding VersionStatus, Converter={StaticResource VerStatus}, ConverterParameter=bg}">
+                                                <TextBlock Text="{Binding VersionStatus, Converter={StaticResource VerStatus}, ConverterParameter=text}"
+                                                           Foreground="{Binding VersionStatus, Converter={StaticResource VerStatus}, ConverterParameter=fg}"
+                                                           FontFamily="{StaticResource PrimaryFont}" FontSize="9" FontWeight="SemiBold"/>
+                                            </Border>
+                                            <Border CornerRadius="4" Padding="5,1" Margin="7,0,0,0"
+                                                    Background="{StaticResource AccentMutedBrush}"
+                                                    Visibility="{Binding HasSwitchSnapshot, Converter={StaticResource BoolToVis}}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding SwitchedFromLabel}"
+                                                               FontFamily="{StaticResource PrimaryFont}" FontSize="9"
+                                                               Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center"/>
+                                                    <Button Style="{StaticResource IconButtonStyle}"
+                                                            Width="16" Height="16" Padding="2" Margin="3,0,0,0"
+                                                            ToolTip="Undo this version switch"
+                                                            Command="{Binding DataContext.UndoSwitchCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                            CommandParameter="{Binding}">
+                                                        <Path Data="M 8,4 L 3,9 L 8,14 M 3,9 H 13 C 17,9 19,11 19,14 V 16"
+                                                              Stroke="{StaticResource AccentBrush}" StrokeThickness="1.6"
+                                                              StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                              Width="10" Height="10" Stretch="Uniform"/>
+                                                    </Button>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Total playtime (honors "Show playtime on cards") -->
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                                                        Visibility="{Binding DataContext.ShowPlaytimeOnCards, RelativeSource={RelativeSource AncestorType=Page}, Converter={StaticResource BoolToVis}}">
+                                                <TextBlock Text="·" Margin="7,0,7,0" FontSize="11" VerticalAlignment="Center"
+                                                           Foreground="{StaticResource TextDisabledBrush}"
+                                                           Visibility="{Binding PlaytimeDisplay, Converter={StaticResource NotEmptyToVis}}"/>
+                                                <TextBlock Text="{Binding PlaytimeDisplay}"
+                                                           FontFamily="{StaticResource PrimaryFont}" FontSize="11"
+                                                           Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"
+                                                           Visibility="{Binding PlaytimeDisplay, Converter={StaticResource NotEmptyToVis}}"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- Launch button (fades in on card hover), bottom-right -->
+                                    <Button x:Name="LaunchBtn"
+                                            HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                            Margin="0,0,14,12"
+                                            Height="34" Padding="18,0" FontSize="12" Content="{Binding [launch], Source={x:Static loc:Loc.I}}"
+                                            Command="{Binding DataContext.LaunchCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                            CommandParameter="{Binding}">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+                                                <Setter Property="Opacity" Value="0"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsMouseOver, ElementName=CardRoot}" Value="True">
+                                                        <DataTrigger.EnterActions>
+                                                            <BeginStoryboard>
+                                                                <Storyboard>
+                                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                                     To="1" Duration="0:0:0.15"/>
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </DataTrigger.EnterActions>
+                                                        <DataTrigger.ExitActions>
+                                                            <BeginStoryboard>
+                                                                <Storyboard>
+                                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                                     To="0" Duration="0:0:0.15"/>
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </DataTrigger.ExitActions>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- Loading veil -->
+        <Border Background="#660F0F13"
+                Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+            <ProgressBar Style="{StaticResource AnchorProgressBarStyle}"
+                         IsIndeterminate="True" Width="220" Height="3"
+                         VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        </Border>
+
+        <!-- Modpack import overlay (determinate progress + live status) -->
+        <Border Background="#CC0B0B0F"
+                Visibility="{Binding IsImporting, Converter={StaticResource BoolToVis}}">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Width="360">
+                <TextBlock Text="{Binding [ci_import], Source={x:Static loc:Loc.I}}"
+                           FontFamily="{StaticResource PrimaryFont}" FontSize="16" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimaryBrush}"
+                           HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                <ProgressBar Style="{StaticResource AnchorProgressBarStyle}"
+                             Minimum="0" Maximum="100" Value="{Binding ImportProgress}"
+                             Height="4" Margin="0,0,0,8"/>
+                <TextBlock Text="{Binding ImportStatus}"
+                           FontFamily="{StaticResource PrimaryFont}" FontSize="12"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ══════════ CONSOLE DRAWER ══════════ -->
+        <Border VerticalAlignment="Bottom"
+                Height="280"
+                Background="#0C0C0F"
+                BorderBrush="{StaticResource Surface2Brush}"
+                BorderThickness="0,1,0,0"
+                Visibility="{Binding IsConsoleOpen, Converter={StaticResource BoolToVis}}">
+            <Border.Effect>
+                <DropShadowEffect Direction="90" BlurRadius="24" ShadowDepth="-4" Opacity="0.5"/>
+            </Border.Effect>
+
+            <Grid Margin="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>  <!-- header -->
+                    <RowDefinition Height="Auto"/>  <!-- progress -->
+                    <RowDefinition Height="Auto"/>  <!-- crash banner -->
+                    <RowDefinition Height="Auto"/>  <!-- RAM suggestion toast -->
+                    <RowDefinition Height="*"/>     <!-- log -->
+                </Grid.RowDefinitions>
+
+                <!-- Header -->
+                <Grid Grid.Row="0" Height="42" Background="{StaticResource Surface1Brush}">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                        <!-- Terminal prompt glyph: >_ -->
+                        <Path Data="M 4,6 L 11,12 L 4,18 M 13,18 H 20"
+                              Stroke="{StaticResource AccentBrush}" StrokeThickness="2"
+                              StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                              Width="15" Height="15" Stretch="Uniform"
+                              VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBlock Text="Console"
+                                   FontFamily="{StaticResource PrimaryFont}"
+                                   FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding ActiveInstanceName}"
+                                   FontFamily="{StaticResource PrimaryFont}"
+                                   FontSize="12"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   VerticalAlignment="Center" Margin="8,0,0,0"/>
+                        <Border CornerRadius="4" Padding="7,2" Margin="10,0,0,0"
+                                Background="{StaticResource Surface2Brush}" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding LaunchStatus}"
+                                       FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="10"
+                                       Foreground="{StaticResource TextSecondaryBrush}"/>
+                        </Border>
+
+                        <!-- Live RAM monitor (visible while running) -->
+                        <StackPanel Orientation="Horizontal" Margin="14,0,0,0" VerticalAlignment="Center"
+                                    Visibility="{Binding IsGameRunning, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="{Binding RamDisplay}"
+                                       FontFamily="Consolas, Cascadia Mono"
+                                       FontSize="11"
+                                       Foreground="{Binding RamPercent, Converter={StaticResource RamBrush}}"
+                                       VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <ProgressBar Style="{StaticResource AnchorProgressBarStyle}"
+                                         Width="64" Height="4"
+                                         Minimum="0" Maximum="100"
+                                         Value="{Binding RamPercent, Mode=OneWay}"
+                                         Foreground="{Binding RamPercent, Converter={StaticResource RamBrush}}"
+                                         VerticalAlignment="Center"/>
+                            <Button Content="Force GC"
+                                    Style="{StaticResource GhostButtonStyle}"
+                                    Height="22" Padding="8,0" FontSize="10" Margin="8,0,0,0"
+                                    Command="{Binding ForceGcCommand}"
+                                    ToolTip="Ask the JVM to run a garbage collection now"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0">
+                        <Border Background="{StaticResource Surface2Brush}" CornerRadius="6" Height="28" Width="160"
+                                Margin="0,0,8,0" VerticalAlignment="Center">
+                            <Grid>
+                                <TextBlock Text="Filter logs…" Margin="9,0,0,0" VerticalAlignment="Center"
+                                           FontFamily="{StaticResource PrimaryFont}" FontSize="11"
+                                           Foreground="{StaticResource TextDisabledBrush}" IsHitTestVisible="False">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding ConsoleFilter}" Value="">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBox Text="{Binding ConsoleFilter, UpdateSourceTrigger=PropertyChanged}"
+                                         Background="Transparent" BorderThickness="0" VerticalContentAlignment="Center"
+                                         Padding="9,0" Foreground="{StaticResource TextPrimaryBrush}" CaretBrush="White"
+                                         FontFamily="{StaticResource PrimaryFont}" FontSize="11"/>
+                            </Grid>
+                        </Border>
+                        <Button Content="Copy All"
+                                Style="{StaticResource GhostButtonStyle}"
+                                Height="28" Padding="12,0" FontSize="11" Margin="0,0,8,0"
+                                Command="{Binding CopyConsoleCommand}"/>
+                        <Button Content="Cancel"
+                                Style="{StaticResource GhostButtonStyle}"
+                                Height="28" Padding="12,0" FontSize="11" Margin="0,0,8,0"
+                                Visibility="{Binding IsPreparing, Converter={StaticResource BoolToVis}}"
+                                Command="{Binding CancelLaunchCommand}"/>
+                        <Button Content="Stop"
+                                Style="{StaticResource GhostButtonStyle}"
+                                Height="28" Padding="12,0" FontSize="11" Margin="0,0,8,0"
+                                Visibility="{Binding IsGameRunning, Converter={StaticResource BoolToVis}}"
+                                Command="{Binding StopGameCommand}"/>
+                        <Button Style="{StaticResource IconButtonStyle}"
+                                Width="28" Height="28"
+                                Command="{Binding ToggleConsoleCommand}"
+                                ToolTip="Hide console">
+                            <Path Data="M 7,7 L 21,21 M 21,7 L 7,21"
+                                  Stroke="{StaticResource TextSecondaryBrush}" StrokeThickness="1.5"
+                                  StrokeEndLineCap="Round" Width="12" Height="12" Stretch="Uniform"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Prep progress -->
+                <Grid Grid.Row="1" Height="Auto"
+                      Visibility="{Binding IsPreparing, Converter={StaticResource BoolToVis}}"
+                      Background="{StaticResource Surface1Brush}">
+                    <ProgressBar Style="{StaticResource AnchorProgressBarStyle}"
+                                 Minimum="0" Maximum="100"
+                                 Value="{Binding LaunchProgress}"
+                                 Height="3" Margin="16,0,16,8"/>
+                </Grid>
+
+                <!-- Crash analysis banner -->
+                <Border Grid.Row="2" Background="#241414"
+                        BorderBrush="#5A2A2A" BorderThickness="0,1,0,1"
+                        Padding="16,12"
+                        Visibility="{Binding HasCrash, Converter={StaticResource BoolToVis}}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Path Grid.Column="0"
+                              Data="M 12,3 L 22,21 L 2,21 Z M 12,10 V 15 M 12,17.6 V 18"
+                              Stroke="{StaticResource ErrorBrush}" StrokeThickness="1.6"
+                              StrokeLineJoin="Round" StrokeEndLineCap="Round"
+                              Width="22" Height="22" Stretch="Uniform"
+                              VerticalAlignment="Top" Margin="0,1,12,0"/>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Crash.Title}"
+                                       FontFamily="{StaticResource PrimaryFont}" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                            <TextBlock Text="{Binding Crash.Explanation}"
+                                       FontFamily="{StaticResource PrimaryFont}" FontSize="12"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       TextWrapping="Wrap" Margin="0,3,0,0"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2" Orientation="Horizontal"
+                                    VerticalAlignment="Center" Margin="14,0,0,0">
+                            <Button Content="{Binding Crash.FixLabel}"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Height="30" Padding="14,0" FontSize="11" Margin="0,0,8,0"
+                                    Command="{Binding ApplyCrashFixCommand}"
+                                    Visibility="{Binding Crash.FixLabel, Converter={StaticResource NotEmptyToVis}}"/>
+                            <Button Content="Dismiss"
+                                    Style="{StaticResource GhostButtonStyle}"
+                                    Height="30" Padding="14,0" FontSize="11"
+                                    Command="{Binding DismissCrashCommand}"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- RAM suggestion toast -->
+                <Border Grid.Row="3" Background="#2A2113"
+                        BorderBrush="#5C4A1E" BorderThickness="0,1,0,1" Padding="16,8"
+                        Visibility="{Binding RamSuggestion, Converter={StaticResource NotEmptyToVis}}">
+                    <Grid>
+                        <TextBlock Text="{Binding RamSuggestion}"
+                                   FontFamily="{StaticResource PrimaryFont}" FontSize="11.5"
+                                   Foreground="{StaticResource WarningBrush}"
+                                   TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,80,0"/>
+                        <Button Content="Dismiss" HorizontalAlignment="Right"
+                                Style="{StaticResource GhostButtonStyle}"
+                                Height="24" Padding="10,0" FontSize="10"
+                                Command="{Binding DismissRamSuggestionCommand}"/>
+                    </Grid>
+                </Border>
+
+                <!-- Log output + scroll-to-bottom FAB -->
+                <Grid Grid.Row="4">
+                <ListBox x:Name="ConsoleList"
+                         ItemsSource="{Binding ConsoleLines}"
+                         Background="Transparent" BorderThickness="0"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         ScrollViewer.ScrollChanged="ConsoleList_ScrollChanged"
+                         VirtualizingPanel.IsVirtualizing="True"
+                         VirtualizingPanel.VirtualizationMode="Recycling">
+                    <ListBox.Resources>
+                        <!-- Thin dark Anchor scrollbar instead of the default Windows one -->
+                        <Style TargetType="ScrollBar" BasedOn="{StaticResource AnchorScrollBarStyle}"/>
+                    </ListBox.Resources>
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Focusable" Value="False"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <ContentPresenter/>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}"
+                                       FontFamily="{Binding DataContext.ConsoleFont, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                       FontSize="{Binding DataContext.ConsoleFontSize, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                       Foreground="{Binding Converter={StaticResource LogBrush}}"
+                                       TextWrapping="Wrap"
+                                       Margin="16,0.5,16,0.5"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                    <!-- Scroll-to-bottom FAB (shown when scrolled up) -->
+                    <Button x:Name="ScrollBottomFab" Visibility="Collapsed"
+                            HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,18,12"
+                            Width="34" Height="34" Style="{StaticResource IconButtonStyle}"
+                            Background="{StaticResource AccentBrush}"
+                            Click="ScrollBottom_Click" ToolTip="Scroll to bottom">
+                        <Border CornerRadius="17" Background="{StaticResource AccentBrush}" Width="34" Height="34">
+                            <Path Data="M 6,9 L 12,15 L 18,9" Stroke="White" StrokeThickness="2"
+                                  StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                  Width="16" Height="16" Stretch="Uniform"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </Button>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</Page>

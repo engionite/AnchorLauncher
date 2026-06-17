@@ -1,0 +1,47 @@
+Anchor Launcher — Source-Available License
+Copyright (c) 2026 Simplexity Development. All rights reserved.
+
+This source code is made publicly available for transparency, security review, and
+personal evaluation only. It is NOT open-source software and is NOT placed in the
+public domain. "Anchor Launcher", "Anchor Analytics", and "Simplexity Development"
+are names and marks of the copyright holder.
+
+1. Permitted use
+   You may:
+   (a) view, read, and study this source code; and
+   (b) download and run the official builds published by the copyright holder for
+       your own personal, non-commercial use.
+
+2. Restrictions
+   Except where a separate written license is granted by the copyright holder, you
+   may NOT:
+   (a) copy, reproduce, or republish the source code or any substantial part of it;
+   (b) modify, adapt, translate, or create derivative or competing works from it;
+   (c) redistribute, sublicense, sell, rent, lease, or otherwise make the code or
+       builds available to third parties;
+   (d) use any portion of the code, assets, designs, or implementation techniques in
+       another product or project; or
+   (e) remove, obscure, or alter any copyright, trademark, or attribution notices.
+
+3. Contributions
+   Any contribution you submit to this project (e.g. a pull request) is provided to
+   the copyright holder under these same terms, and you grant the copyright holder a
+   perpetual, irrevocable, royalty-free license to use it without restriction.
+
+4. Third-party components
+   This software uses third-party open-source libraries that remain under their own
+   respective licenses (e.g. MIT). Those licenses are not affected by this one.
+
+5. No warranty
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+   INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+   PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE
+   LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM, OUT OF, OR IN
+   CONNECTION WITH THE SOFTWARE OR ITS USE.
+
+6. Trademarks
+   This license grants no rights to use the names or marks above. "Minecraft" is a
+   trademark of Mojang Synergies AB; this project is not affiliated with or endorsed
+   by Mojang or Microsoft.
+
+For any use beyond Section 1, contact the copyright holder for written permission.

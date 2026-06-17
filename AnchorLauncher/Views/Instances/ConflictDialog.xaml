@@ -1,0 +1,99 @@
+<Window x:Class="AnchorLauncher.Views.Instances.ConflictDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:diag="clr-namespace:AnchorLauncher.Models.Diagnostics"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Width="560" SizeToContent="Height"
+        MaxHeight="620"
+        ShowInTaskbar="False"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
+
+    <Border Background="#18181C"
+            BorderBrush="{StaticResource Surface2Brush}"
+            BorderThickness="1" CornerRadius="8" Margin="14"
+            MouseLeftButtonDown="Root_MouseDown">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="22" ShadowDepth="4" Direction="270" Opacity="0.55"/>
+        </Border.Effect>
+
+        <Grid Margin="24,22,24,20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                <Path Data="M 12,3 L 22,21 L 2,21 Z M 12,10 V 15 M 12,17.6 V 18"
+                      Stroke="{StaticResource WarningBrush}" StrokeThickness="1.7"
+                      StrokeLineJoin="Round" StrokeEndLineCap="Round"
+                      Width="22" Height="22" Stretch="Uniform"
+                      VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <TextBlock Text="Mod conflicts detected"
+                           FontFamily="{StaticResource PrimaryFont}" FontSize="15" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <TextBlock Grid.Row="1"
+                       Text="The pre-launch check found problems that may crash the game or break mods:"
+                       FontFamily="{StaticResource PrimaryFont}" FontSize="12.5"
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       TextWrapping="Wrap" Margin="0,0,0,12"/>
+
+            <Border Grid.Row="2" Background="#26000000" CornerRadius="6" MaxHeight="320">
+                <ScrollViewer Style="{StaticResource AnchorScrollViewerStyle}" Margin="6">
+                    <ItemsControl x:Name="ConflictList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type diag:ModConflict}">
+                                <StackPanel Orientation="Horizontal" Margin="8,5">
+                                    <Border Width="7" Height="7" CornerRadius="4" VerticalAlignment="Top" Margin="0,5,9,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="{StaticResource WarningBrush}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Severity}"
+                                                                 Value="{x:Static diag:ConflictSeverity.Error}">
+                                                        <Setter Property="Background" Value="{StaticResource ErrorBrush}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+                                    <TextBlock Text="{Binding Message}"
+                                               FontFamily="{StaticResource PrimaryFont}" FontSize="12.5"
+                                               Foreground="{StaticResource TextPrimaryBrush}"
+                                               TextWrapping="Wrap" MaxWidth="440"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+
+            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
+                <Button Content="Open Mods Folder"
+                        Style="{StaticResource GhostButtonStyle}"
+                        Height="36" Padding="16,0" Margin="0,0,10,0"
+                        Click="BtnOpenMods_Click"/>
+                <Button Content="Cancel"
+                        Style="{StaticResource GhostButtonStyle}"
+                        Height="36" Padding="16,0" Margin="0,0,10,0"
+                        Click="BtnCancel_Click"/>
+                <Button x:Name="BtnAutoFix" Content="Auto-Fix"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Height="36" Padding="18,0" Margin="0,0,10,0"
+                        Click="BtnAutoFix_Click"/>
+                <Button Content="Launch Anyway"
+                        Style="{StaticResource GhostButtonStyle}"
+                        Height="36" Padding="18,0"
+                        Click="BtnLaunch_Click"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>
