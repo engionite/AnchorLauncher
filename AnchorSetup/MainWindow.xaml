@@ -1,0 +1,396 @@
+<Window x:Class="AnchorSetup.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:AnchorSetup.Localization"
+        xmlns:conv="clr-namespace:AnchorSetup.Converters"
+        xmlns:vm="clr-namespace:AnchorSetup.ViewModels"
+        Title="Anchor Launcher Setup"
+        Width="940" Height="624"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ResizeMode="NoResize" WindowStartupLocation="CenterScreen"
+        Icon="/Assets/AnchorLauncherIcon.png"
+        FontFamily="{StaticResource UiFont}" UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="ClearType"
+        SnapsToDevicePixels="True">
+
+    <Window.Resources>
+        <conv:StepVisibilityConverter x:Key="StepVis" />
+        <conv:BoolToVisibilityConverter x:Key="BoolVis" />
+        <Style TargetType="ScrollBar" BasedOn="{StaticResource ThinScrollBar}" />
+    </Window.Resources>
+
+    <!-- Outer card with soft shadow -->
+    <Border Margin="20" CornerRadius="16" Background="{StaticResource BgBrush}" ClipToBounds="True">
+        <Border.Effect>
+            <DropShadowEffect Color="Black" BlurRadius="42" ShadowDepth="0" Opacity="0.62" />
+        </Border.Effect>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="296" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ════════════════════════ SIDEBAR ════════════════════════ -->
+            <Border Grid.Column="0" Background="{StaticResource SidebarGradient}">
+                <Grid>
+                    <!-- faint anchor glyph watermark, bottom -->
+                    <Image Source="/Assets/AnchorLauncherIcon.png" Width="230" Height="230"
+                           Opacity="0.05" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                           Margin="0,0,0,-30" RenderOptions.BitmapScalingMode="HighQuality" />
+
+                    <Grid Margin="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Brand header -->
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="34,40,28,8">
+                            <Border Width="52" Height="52" CornerRadius="14" ClipToBounds="True">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#FF4500" BlurRadius="20" ShadowDepth="0" Opacity="0.5" />
+                                </Border.Effect>
+                                <Image Source="/Assets/AnchorLauncherIcon.png" Stretch="UniformToFill"
+                                       RenderOptions.BitmapScalingMode="HighQuality" />
+                            </Border>
+                            <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="Anchor Launcher" Foreground="{StaticResource TextPrimaryBrush}"
+                                           FontSize="18" FontWeight="Bold" />
+                                <TextBlock Text="{Binding [win_subtitle], Source={x:Static loc:SetupLoc.I}}"
+                                           Foreground="{StaticResource AccentHoverBrush}" FontSize="12.5"
+                                           FontWeight="SemiBold" Margin="0,1,0,0" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Stepper -->
+                        <Grid Grid.Row="1" VerticalAlignment="Center" Margin="38,8,28,8">
+                            <Rectangle Width="2" Fill="{StaticResource StrokeBrush}" HorizontalAlignment="Left"
+                                       Margin="22,26,0,26" VerticalAlignment="Stretch" />
+                            <ItemsControl ItemsSource="{Binding Steps}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:StepVm}">
+                                        <Grid Height="62">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="46" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- bubble -->
+                                            <Border x:Name="bubble" Grid.Column="0" Width="38" Height="38"
+                                                    CornerRadius="19" HorizontalAlignment="Left"
+                                                    Background="{StaticResource Surface2Brush}"
+                                                    BorderBrush="{StaticResource StrokeBrush}" BorderThickness="1.5">
+                                                <Grid>
+                                                    <TextBlock x:Name="num" Text="{Binding Number}"
+                                                               Foreground="{StaticResource TextMutedBrush}"
+                                                               FontSize="14" FontWeight="SemiBold"
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    <Path x:Name="check" Width="15" Height="15" Stretch="Uniform"
+                                                          Data="M 0 6 L 5 11 L 14 1" Stroke="White" StrokeThickness="2.4"
+                                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                                          Visibility="Collapsed"
+                                                          HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Grid>
+                                            </Border>
+
+                                            <TextBlock x:Name="label" Grid.Column="1" Text="{Binding Title}"
+                                                       VerticalAlignment="Center" Margin="14,0,0,0"
+                                                       Foreground="{StaticResource TextMutedBrush}"
+                                                       FontSize="14.5" FontWeight="Medium" />
+                                        </Grid>
+
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding IsDone}" Value="True">
+                                                <Setter TargetName="bubble" Property="Background" Value="{StaticResource AccentMutedBrush}" />
+                                                <Setter TargetName="bubble" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                                                <Setter TargetName="num" Property="Visibility" Value="Collapsed" />
+                                                <Setter TargetName="check" Property="Visibility" Value="Visible" />
+                                                <Setter TargetName="check" Property="Stroke" Value="{StaticResource AccentHoverBrush}" />
+                                                <Setter TargetName="label" Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                <Setter TargetName="bubble" Property="Background" Value="{StaticResource AccentGradient}" />
+                                                <Setter TargetName="bubble" Property="BorderBrush" Value="{StaticResource AccentHoverBrush}" />
+                                                <Setter TargetName="num" Property="Foreground" Value="White" />
+                                                <Setter TargetName="num" Property="FontWeight" Value="Bold" />
+                                                <Setter TargetName="label" Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                                                <Setter TargetName="label" Property="FontWeight" Value="SemiBold" />
+                                                <Setter TargetName="bubble" Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect Color="#FF4500" BlurRadius="18" ShadowDepth="0" Opacity="0.7" />
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Grid>
+
+                        <!-- Footer -->
+                        <StackPanel Grid.Row="2" Margin="36,8,28,26">
+                            <Rectangle Height="1" Fill="{StaticResource StrokeSoftBrush}" Margin="0,0,0,16" />
+                            <TextBlock Text="v1.0.0  ·  Simplexity Development"
+                                       Foreground="{StaticResource TextMutedBrush}" FontSize="11.5" />
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- ════════════════════════ CONTENT ════════════════════════ -->
+            <Grid Grid.Column="1" Background="{StaticResource Surface1Brush}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="46" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- chrome / drag bar -->
+                <Border Grid.Row="0" Background="Transparent" MouseLeftButtonDown="Chrome_MouseDown">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,10,0">
+                        <Button Style="{StaticResource ChromeButton}" Click="Min_Click" Content="&#xE921;" />
+                        <Button Style="{StaticResource CloseButton}" Command="{Binding CancelCommand}" Content="&#xE8BB;" />
+                    </StackPanel>
+                </Border>
+
+                <!-- ░░░░░ STEP PAGES ░░░░░ -->
+                <Grid Grid.Row="1" Margin="50,6,50,8">
+
+                    <!-- ── WELCOME ── -->
+                    <Grid Visibility="{Binding CurrentStep, Converter={StaticResource StepVis}, ConverterParameter=Welcome}">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding [wel_title], Source={x:Static loc:SetupLoc.I}}"
+                                       Foreground="{StaticResource TextPrimaryBrush}" FontSize="29" FontWeight="Bold"
+                                       TextWrapping="Wrap" MaxWidth="500" HorizontalAlignment="Left" />
+                            <TextBlock Text="{Binding [wel_sub], Source={x:Static loc:SetupLoc.I}}"
+                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="14" TextWrapping="Wrap"
+                                       Margin="0,12,0,0" MaxWidth="460" HorizontalAlignment="Left" LineHeight="21" />
+
+                            <TextBlock Text="{Binding [wel_lang_label], Source={x:Static loc:SetupLoc.I}}"
+                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" FontWeight="SemiBold"
+                                       Margin="0,30,0,8" />
+                            <ComboBox Style="{StaticResource ModernCombo}" ItemContainerStyle="{StaticResource ModernComboItem}"
+                                      ItemsSource="{Binding Languages}" SelectedItem="{Binding SelectedLanguage}"
+                                      MaxWidth="360" HorizontalAlignment="Left" MinWidth="320">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate><TextBlock Text="{Binding Label}" /></DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <TextBlock Text="{Binding [wel_lang_hint], Source={x:Static loc:SetupLoc.I}}"
+                                       Foreground="{StaticResource TextMutedBrush}" FontSize="12" TextWrapping="Wrap"
+                                       Margin="2,8,0,0" MaxWidth="430" HorizontalAlignment="Left" LineHeight="17" />
+
+                            <StackPanel Margin="0,26,0,0">
+                                <StackPanel Orientation="Horizontal" Margin="0,5">
+                                    <Ellipse Width="6" Height="6" Fill="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding [wel_b1], Source={x:Static loc:SetupLoc.I}}"
+                                               Foreground="{StaticResource TextSecondaryBrush}" FontSize="13" Margin="12,0,0,0" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,5">
+                                    <Ellipse Width="6" Height="6" Fill="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding [wel_b2], Source={x:Static loc:SetupLoc.I}}"
+                                               Foreground="{StaticResource TextSecondaryBrush}" FontSize="13" Margin="12,0,0,0" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,5">
+                                    <Ellipse Width="6" Height="6" Fill="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding [wel_b3], Source={x:Static loc:SetupLoc.I}}"
+                                               Foreground="{StaticResource TextSecondaryBrush}" FontSize="13" Margin="12,0,0,0" />
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- ── LICENSE ── -->
+                    <Grid Visibility="{Binding CurrentStep, Converter={StaticResource StepVis}, ConverterParameter=License}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Margin="0,18,0,0">
+                            <TextBlock Text="{Binding [lic_title], Source={x:Static loc:SetupLoc.I}}"
+                                       Foreground="{StaticResource TextPrimaryBrush}" FontSize="26" FontWeight="Bold"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding [lic_sub], Source={x:Static loc:SetupLoc.I}}"
+                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="13.5" Margin="0,8,0,16" />
+                        </StackPanel>
+                        <Border Grid.Row="1" Background="{StaticResource BgBrush}" CornerRadius="12"
+                                BorderBrush="{StaticResource StrokeBrush}" BorderThickness="1" Padding="6">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="14,12">
+                                <TextBlock Text="{Binding LicenseText}" Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="12.5" TextWrapping="Wrap" LineHeight="19" />
+                            </ScrollViewer>
+                        </Border>
+                        <CheckBox Grid.Row="2" Style="{StaticResource ModernCheck}" Margin="2,18,0,4"
+                                  IsChecked="{Binding AcceptedLicense}"
+                                  Content="{Binding [lic_accept], Source={x:Static loc:SetupLoc.I}}" />
+                    </Grid>
+
+                    <!-- ── OPTIONS ── -->
+                    <Grid Visibility="{Binding CurrentStep, Converter={StaticResource StepVis}, ConverterParameter=Options}">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding [opt_title], Source={x:Static loc:SetupLoc.I}}"
+                                       Foreground="{StaticResource TextPrimaryBrush}" FontSize="26" FontWeight="Bold"
+                                       TextWrapping="Wrap" MaxWidth="520" HorizontalAlignment="Left" />
+                            <TextBlock Text="{Binding [opt_sub], Source={x:Static loc:SetupLoc.I}}"
+                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="13.5" Margin="0,8,0,22" />
+
+                            <TextBlock Text="{Binding [opt_location], Source={x:Static loc:SetupLoc.I}}"
+                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" FontWeight="SemiBold"
+                                       Margin="0,0,0,8" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" Style="{StaticResource ModernTextBox}" Text="{Binding InstallPath}" />
+                                <Button Grid.Column="1" Style="{StaticResource GhostButton}" Margin="10,0,0,0"
+                                        Command="{Binding BrowseCommand}"
+                                        Content="{Binding [btn_browse], Source={x:Static loc:SetupLoc.I}}" />
+                            </Grid>
+                            <TextBlock Text="{Binding [opt_loc_hint], Source={x:Static loc:SetupLoc.I}}"
+                                       Foreground="{StaticResource TextMutedBrush}" FontSize="12" TextWrapping="Wrap"
+                                       Margin="2,8,0,22" MaxWidth="470" HorizontalAlignment="Left" />
+
+                            <CheckBox Style="{StaticResource ModernCheck}" Margin="0,7" IsChecked="{Binding StartMenuShortcut}"
+                                      Content="{Binding [opt_startmenu], Source={x:Static loc:SetupLoc.I}}" />
+                            <CheckBox Style="{StaticResource ModernCheck}" Margin="0,7" IsChecked="{Binding DesktopShortcut}"
+                                      Content="{Binding [opt_desktop], Source={x:Static loc:SetupLoc.I}}" />
+                            <CheckBox Style="{StaticResource ModernCheck}" Margin="0,7" IsChecked="{Binding RunAtStartup}"
+                                      Content="{Binding [opt_startup], Source={x:Static loc:SetupLoc.I}}" />
+
+                            <StackPanel Orientation="Horizontal" Margin="0,22,0,0">
+                                <TextBlock Text="{Binding [opt_space], Source={x:Static loc:SetupLoc.I}}"
+                                           Foreground="{StaticResource TextMutedBrush}" FontSize="12.5" />
+                                <TextBlock Text="  ~170 MB" Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="12.5" FontWeight="SemiBold" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- ── INSTALLING ── -->
+                    <Grid Visibility="{Binding CurrentStep, Converter={StaticResource StepVis}, ConverterParameter=Installing}">
+                        <StackPanel VerticalAlignment="Center" MaxWidth="500" HorizontalAlignment="Center">
+                            <Image x:Name="InstallLogo" Source="/Assets/AnchorLauncherIcon.png" Width="76" Height="76"
+                                   HorizontalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"
+                                   RenderTransformOrigin="0.5,0.5">
+                                <Image.RenderTransform><ScaleTransform x:Name="LogoScale" /></Image.RenderTransform>
+                            </Image>
+
+                            <TextBlock Text="{Binding [ins_title], Source={x:Static loc:SetupLoc.I}}"
+                                       Foreground="{StaticResource TextPrimaryBrush}" FontSize="22" FontWeight="Bold"
+                                       HorizontalAlignment="Center" Margin="0,22,0,0" />
+                            <TextBlock Text="{Binding [ins_sub], Source={x:Static loc:SetupLoc.I}}"
+                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="13.5"
+                                       HorizontalAlignment="Center" Margin="0,8,0,28"
+                                       Visibility="{Binding IsFailed, Converter={StaticResource BoolVis}, ConverterParameter=invert}" />
+
+                            <ProgressBar Style="{StaticResource ModernProgress}" Minimum="0" Maximum="100"
+                                         Value="{Binding Progress}" Width="420"
+                                         Visibility="{Binding IsFailed, Converter={StaticResource BoolVis}, ConverterParameter=invert}" />
+                            <Grid Width="420" Margin="0,12,0,0"
+                                  Visibility="{Binding IsFailed, Converter={StaticResource BoolVis}, ConverterParameter=invert}">
+                                <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="13" HorizontalAlignment="Left" />
+                                <TextBlock Text="{Binding Progress, StringFormat={}{0:0}%}"
+                                           Foreground="{StaticResource AccentHoverBrush}" FontSize="13"
+                                           FontWeight="SemiBold" HorizontalAlignment="Right" />
+                            </Grid>
+
+                            <!-- failure block -->
+                            <StackPanel Visibility="{Binding IsFailed, Converter={StaticResource BoolVis}}" Margin="0,6,0,0">
+                                <TextBlock Text="{Binding [ins_failed], Source={x:Static loc:SetupLoc.I}}"
+                                           Foreground="{StaticResource ErrorBrush}" FontSize="15" FontWeight="SemiBold"
+                                           HorizontalAlignment="Center" />
+                                <TextBlock Text="{Binding ErrorText}" Foreground="{StaticResource TextMutedBrush}"
+                                           FontSize="12.5" TextWrapping="Wrap" HorizontalAlignment="Center"
+                                           TextAlignment="Center" Margin="0,8,0,16" MaxWidth="430" />
+                                <Button Style="{StaticResource PrimaryButton}" HorizontalAlignment="Center"
+                                        Command="{Binding RetryCommand}"
+                                        Content="{Binding [btn_install], Source={x:Static loc:SetupLoc.I}}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- ── FINISH ── -->
+                    <Grid Visibility="{Binding CurrentStep, Converter={StaticResource StepVis}, ConverterParameter=Finish}">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="460">
+                            <Border Width="86" Height="86" CornerRadius="43" HorizontalAlignment="Center"
+                                    Background="{StaticResource AccentMutedBrush}">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#FF4500" BlurRadius="34" ShadowDepth="0" Opacity="0.55" />
+                                </Border.Effect>
+                                <Path Width="40" Height="40" Stretch="Uniform" Data="M 0 9 L 7 16 L 22 1"
+                                      Stroke="{StaticResource AccentHoverBrush}" StrokeThickness="4"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <TextBlock Text="{Binding [fin_title], Source={x:Static loc:SetupLoc.I}}"
+                                       Foreground="{StaticResource TextPrimaryBrush}" FontSize="28" FontWeight="Bold"
+                                       HorizontalAlignment="Center" Margin="0,24,0,0" />
+                            <TextBlock Text="{Binding [fin_sub], Source={x:Static loc:SetupLoc.I}}"
+                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="14"
+                                       HorizontalAlignment="Center" TextAlignment="Center" Margin="0,10,0,26"
+                                       TextWrapping="Wrap" />
+                            <CheckBox Style="{StaticResource ModernCheck}" HorizontalAlignment="Center"
+                                      IsChecked="{Binding LaunchOnExit}"
+                                      Content="{Binding [fin_launch], Source={x:Static loc:SetupLoc.I}}" />
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+
+                <!-- ░░░░░ FOOTER ░░░░░ -->
+                <Border Grid.Row="2" BorderBrush="{StaticResource StrokeSoftBrush}" BorderThickness="0,1,0,0"
+                        Background="{StaticResource Surface1Brush}">
+                    <Grid Margin="34,18,34,22">
+                        <Button HorizontalAlignment="Left" Style="{StaticResource GhostButton}"
+                                Command="{Binding CancelCommand}" MinWidth="96"
+                                Visibility="{Binding ShowCancel, Converter={StaticResource BoolVis}}"
+                                Content="{Binding [btn_cancel], Source={x:Static loc:SetupLoc.I}}" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Style="{StaticResource GhostButton}" Margin="0,0,12,0" MinWidth="96"
+                                    Command="{Binding BackCommand}"
+                                    Visibility="{Binding ShowBack, Converter={StaticResource BoolVis}}"
+                                    Content="{Binding [btn_back], Source={x:Static loc:SetupLoc.I}}" />
+                            <Button Style="{StaticResource PrimaryButton}"
+                                    Command="{Binding NextCommand}" Content="{Binding NextText}"
+                                    Visibility="{Binding ShowNextInstall, Converter={StaticResource BoolVis}}" />
+                            <Button Style="{StaticResource PrimaryButton}"
+                                    Command="{Binding FinishCommand}" Content="{Binding [btn_finish], Source={x:Static loc:SetupLoc.I}}"
+                                    Visibility="{Binding ShowFinish, Converter={StaticResource BoolVis}}" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- ════════════════════════ CANCEL CONFIRM OVERLAY ════════════════════════ -->
+            <Border Grid.ColumnSpan="2" Background="#D0000000"
+                    Visibility="{Binding ConfirmingCancel, Converter={StaticResource BoolVis}}">
+                <Border Width="420" CornerRadius="16" Background="{StaticResource Surface1Brush}"
+                        BorderBrush="{StaticResource StrokeBrush}" BorderThickness="1"
+                        VerticalAlignment="Center" HorizontalAlignment="Center" Padding="30,28">
+                    <Border.Effect>
+                        <DropShadowEffect Color="Black" BlurRadius="36" ShadowDepth="0" Opacity="0.6" />
+                    </Border.Effect>
+                    <StackPanel>
+                        <TextBlock Text="{Binding [cancel_title], Source={x:Static loc:SetupLoc.I}}"
+                                   Foreground="{StaticResource TextPrimaryBrush}" FontSize="19" FontWeight="Bold" />
+                        <TextBlock Text="{Binding [cancel_body], Source={x:Static loc:SetupLoc.I}}"
+                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="13.5" TextWrapping="Wrap"
+                                   Margin="0,12,0,24" LineHeight="20" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Style="{StaticResource GhostButton}" Margin="0,0,12,0"
+                                    Command="{Binding DismissCancelCommand}"
+                                    Content="{Binding [cancel_no], Source={x:Static loc:SetupLoc.I}}" />
+                            <Button Style="{StaticResource PrimaryButton}" MinWidth="120"
+                                    Command="{Binding ConfirmQuitCommand}"
+                                    Content="{Binding [cancel_yes], Source={x:Static loc:SetupLoc.I}}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

@@ -8,6 +8,7 @@
 # ── Published / distributable binaries (upload these as Release assets, not commits) ──
 /publish/
 /publish-selfcontained/
+/publish-setup/
 *.exe
 *.pdb
 

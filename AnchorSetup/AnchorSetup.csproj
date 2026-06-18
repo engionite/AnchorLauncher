@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>AnchorLauncherSetup</AssemblyName>
+    <RootNamespace>AnchorSetup</RootNamespace>
+
+    <!-- Multi-frame .ico embedded in the installer exe -->
+    <ApplicationIcon>Assets\AnchorLauncherIcon.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <AssemblyTitle>Anchor Launcher Setup</AssemblyTitle>
+    <Description>Anchor Launcher Installer</Description>
+    <Company>Simplexity Development</Company>
+    <Product>Anchor Launcher</Product>
+    <Copyright>© 2026 Simplexity Development. All rights reserved.</Copyright>
+    <Version>1.0.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+
+    <!-- Publish flags (self-contained single-file) are passed on the `dotnet publish`
+         command line so a plain `dotnet build` stays fast and dependency-light. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The anchor logo is the only image the wizard draws (header, watermark, install/finish). -->
+    <Resource Include="Assets\AnchorLauncherIcon.png" />
+    <!-- EULA text loaded at runtime via GetManifestResourceStream -->
+    <EmbeddedResource Include="Assets\LICENSE.txt" />
+  </ItemGroup>
+
+</Project>
