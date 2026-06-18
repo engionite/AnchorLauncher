@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "url": "https://github.com/engionite/AnchorLauncher/releases/latest",
-  "notes": "Open Beta — 15-language UI, per-instance icons, Modrinth modpack import, auto-saving settings."
+  "notes": "v1.0.1 — accurate mod-conflict scanner (no more false Fabric API/Sodium+Iris warnings), fixed Settings scrolling, localized the instance menu & Edit dialog, clearer Microsoft sign-in message."
 }

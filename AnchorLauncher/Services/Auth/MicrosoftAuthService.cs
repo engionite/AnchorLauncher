@@ -258,7 +258,9 @@ public class MicrosoftAuthService
         req.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
 
         using var resp = await _http.SendAsync(req);
-        resp.EnsureSuccessStatusCode();
+        if (!resp.IsSuccessStatusCode)
+            throw new MicrosoftAuthException(
+                $"Xbox Live sign-in failed (HTTP {(int)resp.StatusCode}). {await SafeReadBodyAsync(resp)}");
 
         using var doc  = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
         var token      = doc.RootElement.GetProperty("Token").GetString()!;
@@ -323,13 +325,40 @@ public class MicrosoftAuthService
         req.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
 
         using var resp = await _http.SendAsync(req);
-        resp.EnsureSuccessStatusCode();
+
+        // 403 here = the launcher's Azure app hasn't been granted Minecraft API access yet.
+        // Xbox auth all succeeded; api.minecraftservices.com simply refuses the app. This is an
+        // app-level approval (https://aka.ms/mce-reviewappid), not anything the player can fix —
+        // so say so plainly and point them at Ely.by instead of showing a raw "403 Forbidden".
+        if (resp.StatusCode == System.Net.HttpStatusCode.Forbidden)
+        {
+            Debug.WriteLine($"[MsAuth] STEP 4 403 from login_with_xbox: {await SafeReadBodyAsync(resp)}");
+            throw new MicrosoftAuthException(
+                "Microsoft sign-in isn't available in this build yet. Anchor's Microsoft app is still " +
+                "awaiting Minecraft API approval (Microsoft returns 403 — this affects every account, " +
+                "not yours specifically). Please use Ely.by for now; Microsoft accounts will work once " +
+                "approval comes through.");
+        }
+        if (!resp.IsSuccessStatusCode)
+            throw new MicrosoftAuthException(
+                $"Minecraft token exchange failed (HTTP {(int)resp.StatusCode}). {await SafeReadBodyAsync(resp)}");
 
         using var doc  = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
         var token      = doc.RootElement.GetProperty("access_token").GetString()!;
         var expiresIn  = doc.RootElement.GetProperty("expires_in").GetInt32();
         Debug.WriteLine("[MsAuth] Minecraft token acquired.");
         return (token, DateTime.UtcNow.AddSeconds(expiresIn));
+    }
+
+    /// <summary>Reads a (failed) response body for diagnostics, trimmed and length-capped; never throws.</summary>
+    private static async Task<string> SafeReadBodyAsync(HttpResponseMessage resp)
+    {
+        try
+        {
+            var s = (await resp.Content.ReadAsStringAsync()).Trim();
+            return s.Length > 300 ? s[..300] : s;
+        }
+        catch { return string.Empty; }
     }
 
     /// <summary>

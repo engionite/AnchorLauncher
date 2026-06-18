@@ -175,14 +175,14 @@
                                 </Border.Background>
                                 <Border.ContextMenu>
                                     <ContextMenu>
-                                        <MenuItem Header="Edit"           Click="MenuEdit_Click"/>
-                                        <MenuItem Header="Set Icon…"      Click="MenuSetIcon_Click"/>
-                                        <MenuItem Header="Switch Version" Click="MenuSwitchVersion_Click"/>
-                                        <MenuItem Header="Undo Last Switch" Click="MenuUndoSwitch_Click"
+                                        <MenuItem Header="{Binding [ctx_edit], Source={x:Static loc:Loc.I}}"        Click="MenuEdit_Click"/>
+                                        <MenuItem Header="{Binding [ctx_seticon], Source={x:Static loc:Loc.I}}"     Click="MenuSetIcon_Click"/>
+                                        <MenuItem Header="{Binding [ctx_switchver], Source={x:Static loc:Loc.I}}"   Click="MenuSwitchVersion_Click"/>
+                                        <MenuItem Header="{Binding [ctx_undoswitch], Source={x:Static loc:Loc.I}}"  Click="MenuUndoSwitch_Click"
                                                   Visibility="{Binding HasSwitchSnapshot, Converter={StaticResource BoolToVis}}"/>
-                                        <MenuItem Header="Clone"          Click="MenuClone_Click"/>
-                                        <MenuItem Header="Export (.zip)"  Click="MenuExport_Click"/>
-                                        <MenuItem Header="Delete"         Click="MenuDelete_Click"/>
+                                        <MenuItem Header="{Binding [ctx_clone], Source={x:Static loc:Loc.I}}"       Click="MenuClone_Click"/>
+                                        <MenuItem Header="{Binding [ctx_export], Source={x:Static loc:Loc.I}}"      Click="MenuExport_Click"/>
+                                        <MenuItem Header="{Binding [ctx_delete], Source={x:Static loc:Loc.I}}"      Click="MenuDelete_Click"/>
                                     </ContextMenu>
                                 </Border.ContextMenu>
                                 <Border.Style>

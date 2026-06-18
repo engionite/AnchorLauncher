@@ -407,8 +407,12 @@
                             <RowDefinition/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-                        <ScrollContentPresenter Grid.Column="0" Grid.Row="0"/>
-                        <ScrollBar Grid.Column="1" Grid.Row="0"
+<!-- PART names are REQUIRED. Without PART_VerticalScrollBar the ScrollViewer never
+                             connects the scrollbar, so dragging the thumb fights the one-way Value binding and
+                             snaps back (wheel scrolls, but dragging the bar "glitches"). -->
+                        <ScrollContentPresenter x:Name="PART_ScrollContentPresenter" Grid.Column="0" Grid.Row="0"
+                                                CanContentScroll="{TemplateBinding CanContentScroll}"/>
+                        <ScrollBar x:Name="PART_VerticalScrollBar" Grid.Column="1" Grid.Row="0"
                                    Style="{StaticResource AnchorScrollBarStyle}"
                                    Orientation="Vertical"
                                    ViewportSize="{TemplateBinding ViewportHeight}"

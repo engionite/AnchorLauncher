@@ -33,8 +33,11 @@ public class ModScannerService
         public string FileName = string.Empty;
         public string ModId    = string.Empty;
         public string Version  = string.Empty;
-        public Dictionary<string, string> Depends = new(StringComparer.OrdinalIgnoreCase); // id → version constraint
-        public List<string> Breaks = new();
+        public Dictionary<string, string> Depends  = new(StringComparer.OrdinalIgnoreCase); // id → version constraint
+        public Dictionary<string, string> Breaks   = new(StringComparer.OrdinalIgnoreCase); // id → version constraint
+        // Extra ids this jar makes available: its `provides` aliases plus every bundled
+        // (nested) module — e.g. Fabric API ships fabric-resource-loader-v1 et al. as nested jars.
+        public Dictionary<string, string> Provides = new(StringComparer.OrdinalIgnoreCase); // id → version
     }
 
     public Task<List<ModConflict>> ScanAsync(MinecraftInstance instance) => Task.Run(() =>
@@ -55,9 +58,26 @@ public class ModScannerService
             }
 
             var metas = jars.Select(ReadMeta).Where(m => m != null).Cast<ModMeta>().ToList();
-            var provided = new Dictionary<string, ModMeta>(StringComparer.OrdinalIgnoreCase);
-            foreach (var m in metas.Where(m => !string.IsNullOrEmpty(m.ModId)))
-                provided.TryAdd(m.ModId, m);
+
+            // Every id that is actually available, → its version (or "" when unknown).
+            // Includes each mod's own id, its `provides` aliases, and every bundled nested module.
+            var providedVersions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            // id → the top-level jar that supplies it (for naming the "victim" in a break).
+            var providedBy = new Dictionary<string, ModMeta>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var m in metas)
+            {
+                if (!string.IsNullOrEmpty(m.ModId))
+                {
+                    providedVersions[m.ModId] = m.Version;
+                    providedBy.TryAdd(m.ModId, m);
+                }
+                foreach (var (pid, pver) in m.Provides)
+                {
+                    if (!providedVersions.ContainsKey(pid)) providedVersions[pid] = pver;
+                    providedBy.TryAdd(pid, m);
+                }
+            }
 
             // Dependents map: how many installed mods depend on each mod id (drives Auto-Fix choice)
             var dependents = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -77,10 +97,10 @@ public class ModScannerService
                 {
                     if (BuiltinIds.Contains(depId)) continue;
 
-                    if (!provided.TryGetValue(depId, out var dep))
+                    if (!providedVersions.TryGetValue(depId, out var depVer))
                     {
                         // "fabric" historically aliases fabric-api
-                        if (depId.Equals("fabric", OIC) && provided.ContainsKey("fabric-api")) continue;
+                        if (depId.Equals("fabric", OIC) && providedVersions.ContainsKey("fabric-api")) continue;
 
                         conflicts.Add(new ModConflict
                         {
@@ -93,7 +113,10 @@ public class ModScannerService
                                        ", which is not installed."
                         });
                     }
-                    else if (!IsAnyVersion(constraint) && !VersionSatisfies(dep.Version, constraint))
+                    // Only flag a version mismatch when we actually know the installed version.
+                    // Provided/bundled aliases often have no version → don't cry wolf.
+                    else if (!IsAnyVersion(constraint) && !string.IsNullOrEmpty(depVer) &&
+                             !VersionSatisfies(depVer, constraint))
                     {
                         conflicts.Add(new ModConflict
                         {
@@ -101,30 +124,41 @@ public class ModScannerService
                             Kind     = ConflictKind.VersionMismatch,
                             PrimaryFile = mod.FileName,
                             PrimaryDependents = DependentsOf(mod),
-                            Message  = $"{Display(mod)} requires '{depId}' version {constraint} (you have {dep.Version})."
+                            Message  = $"{Display(mod)} requires '{depId}' version {constraint} (you have {depVer})."
                         });
                     }
                 }
 
-                // Declared incompatibilities
-                foreach (var brokenId in mod.Breaks)
+                // Declared incompatibilities — only when the installed version is actually in the
+                // broken range. `breaks` usually means "breaks OLD versions of X"; ignoring the
+                // range is what falsely flagged e.g. Sodium vs a compatible new Iris.
+                foreach (var (brokenId, brkConstraint) in mod.Breaks)
                 {
-                    if (provided.TryGetValue(brokenId, out var victim))
-                        conflicts.Add(new ModConflict
-                        {
-                            Severity = ConflictSeverity.Error,
-                            Kind     = ConflictKind.Incompatible,
-                            PrimaryFile         = mod.FileName,
-                            PrimaryDependents   = DependentsOf(mod),
-                            SecondaryFile       = victim.FileName,
-                            SecondaryDependents = DependentsOf(victim),
-                            Message  = $"{Display(mod)} is incompatible with {Display(victim)} — they cannot run together."
-                        });
+                    if (BuiltinIds.Contains(brokenId)) continue;
+                    if (!providedVersions.TryGetValue(brokenId, out var victimVer)) continue;
+
+                    var inBrokenRange = IsAnyVersion(brkConstraint)
+                        || (!string.IsNullOrEmpty(victimVer) && VersionSatisfies(victimVer, brkConstraint));
+                    if (!inBrokenRange) continue;
+
+                    var victim = providedBy.TryGetValue(brokenId, out var vm) ? vm : null;
+                    conflicts.Add(new ModConflict
+                    {
+                        Severity = ConflictSeverity.Error,
+                        Kind     = ConflictKind.Incompatible,
+                        PrimaryFile         = mod.FileName,
+                        PrimaryDependents   = DependentsOf(mod),
+                        SecondaryFile       = victim?.FileName ?? brokenId,
+                        SecondaryDependents = victim != null ? DependentsOf(victim) : 0,
+                        Message  = victim != null
+                            ? $"{Display(mod)} is incompatible with {Display(victim)} — they cannot run together."
+                            : $"{Display(mod)} is incompatible with '{brokenId}' — they cannot run together."
+                    });
                 }
             }
 
             lock (_cache) { _cache[key] = conflicts; }
-            Debug.WriteLine($"[ModScan] {jars.Count} jars scanned, {conflicts.Count} findings.");
+            Debug.WriteLine($"[ModScan] {jars.Count} jars scanned, {providedVersions.Count} provided ids, {conflicts.Count} findings.");
             return conflicts;
         }
         catch (Exception ex)
@@ -144,7 +178,11 @@ public class ModScannerService
 
             var fabric = zip.GetEntry("fabric.mod.json") ?? zip.GetEntry("quilt.mod.json");
             if (fabric != null)
-                return ParseFabricJson(ReadEntry(fabric), Path.GetFileName(jarPath));
+            {
+                var meta = ParseFabricJson(ReadEntry(fabric), Path.GetFileName(jarPath));
+                if (meta != null) CollectNestedModules(zip, meta, depth: 0);
+                return meta;
+            }
 
             var toml = zip.GetEntry("META-INF/mods.toml") ?? zip.GetEntry("META-INF/neoforge.mods.toml");
             if (toml != null)
@@ -156,6 +194,44 @@ public class ModScannerService
         {
             Debug.WriteLine($"[ModScan] could not read {Path.GetFileName(jarPath)}: {ex.Message}");
             return null;
+        }
+    }
+
+    /// <summary>
+    /// Registers every module bundled inside a jar (Fabric "jar-in-jar"). Fabric API ships its
+    /// ~50 sub-modules (fabric-resource-loader-v1, fabric-screen-api-v1, …) this way, so without
+    /// this every mod that depends on a Fabric API module looks like it has a missing dependency.
+    /// </summary>
+    private static void CollectNestedModules(ZipArchive zip, ModMeta into, int depth)
+    {
+        if (depth > 2) return; // Fabric API is one level deep; cap recursion defensively
+        foreach (var entry in zip.Entries)
+        {
+            if (!entry.FullName.EndsWith(".jar", OIC)) continue;
+            // bundled jars live under META-INF/jars/ (Fabric) or jars/ (Quilt)
+            if (!entry.FullName.StartsWith("META-INF/jars/", OIC) &&
+                !entry.FullName.StartsWith("jars/", OIC)) continue;
+
+            try
+            {
+                using var nested = entry.Open();
+                using var ms = new MemoryStream();
+                nested.CopyTo(ms);
+                ms.Position = 0;
+                using var nestedZip = new ZipArchive(ms, ZipArchiveMode.Read);
+
+                var fj = nestedZip.GetEntry("fabric.mod.json") ?? nestedZip.GetEntry("quilt.mod.json");
+                if (fj == null) continue;
+
+                var sub = ParseFabricJson(ReadEntry(fj), entry.Name);
+                if (sub == null) continue;
+
+                if (!string.IsNullOrEmpty(sub.ModId)) into.Provides.TryAdd(sub.ModId, sub.Version);
+                foreach (var (pid, pver) in sub.Provides) into.Provides.TryAdd(pid, pver);
+
+                CollectNestedModules(nestedZip, into, depth + 1); // a bundle can bundle further
+            }
+            catch { /* skip an unreadable nested jar */ }
         }
     }
 
@@ -183,28 +259,28 @@ public class ModScannerService
             };
 
             if (root.TryGetProperty("depends", out var dep))
-                ReadDependsElement(dep, meta.Depends);
+                ReadConstraintElement(dep, meta.Depends);
 
             if (root.TryGetProperty("breaks", out var brk))
-            {
-                if (brk.ValueKind == JsonValueKind.Object)
-                    foreach (var p in brk.EnumerateObject()) meta.Breaks.Add(p.Name);
-                else if (brk.ValueKind == JsonValueKind.Array)
-                    foreach (var e in brk.EnumerateArray())
-                        if (e.ValueKind == JsonValueKind.Object && e.TryGetProperty("id", out var bid))
-                            meta.Breaks.Add(bid.GetString() ?? "");
-            }
+                ReadConstraintElement(brk, meta.Breaks);
+
+            // `provides` — explicit aliases this mod satisfies
+            if (root.TryGetProperty("provides", out var prov) && prov.ValueKind == JsonValueKind.Array)
+                foreach (var e in prov.EnumerateArray())
+                    if (e.ValueKind == JsonValueKind.String && e.GetString() is { } pid && pid.Length > 0)
+                        meta.Provides.TryAdd(pid, meta.Version);
 
             return string.IsNullOrEmpty(meta.ModId) ? null : meta;
         }
         catch { return null; }
     }
 
-    private static void ReadDependsElement(JsonElement dep, Dictionary<string, string> into)
+    /// <summary>Reads a fabric/quilt depends-or-breaks element (object id→constraint, or array) into a map.</summary>
+    private static void ReadConstraintElement(JsonElement el, Dictionary<string, string> into)
     {
-        if (dep.ValueKind == JsonValueKind.Object)
+        if (el.ValueKind == JsonValueKind.Object)
         {
-            foreach (var p in dep.EnumerateObject())
+            foreach (var p in el.EnumerateObject())
             {
                 var constraint = p.Value.ValueKind switch
                 {
@@ -215,9 +291,9 @@ public class ModScannerService
                 into.TryAdd(p.Name, constraint);
             }
         }
-        else if (dep.ValueKind == JsonValueKind.Array) // quilt style: [{ "id": "...", "versions": "..." }]
+        else if (el.ValueKind == JsonValueKind.Array) // quilt style: [{ "id": "...", "versions": "..." }] or ["id", …]
         {
-            foreach (var e in dep.EnumerateArray())
+            foreach (var e in el.EnumerateArray())
             {
                 if (e.ValueKind == JsonValueKind.String) { into.TryAdd(e.GetString() ?? "", "*"); continue; }
                 if (e.ValueKind != JsonValueKind.Object || !e.TryGetProperty("id", out var id)) continue;
