@@ -1,5 +1,5 @@
 {
-  "version": "1.0.1",
+  "version": "1.0.2",
   "url": "https://github.com/engionite/AnchorLauncher/releases/latest",
-  "notes": "v1.0.1 — accurate mod-conflict scanner (no more false Fabric API/Sodium+Iris warnings), fixed Settings scrolling, localized the instance menu & Edit dialog, clearer Microsoft sign-in message."
+  "notes": "v1.0.2 — one-click in-app updates (no more reinstalling from GitHub) with a redesigned update prompt. Plus everything from 1.0.1: accurate mod-conflict scanner, fixed Settings scrolling, localized instance menu & Edit dialog, clearer Microsoft sign-in message."
 }

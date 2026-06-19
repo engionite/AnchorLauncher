@@ -120,17 +120,12 @@ public partial class MainWindow : Window
 
             await Dispatcher.InvokeAsync(() =>
             {
-                var choice = System.Windows.MessageBox.Show(
-                    this,
-                    $"A new version is available: v{result.Latest}\n" +
-                    $"You're on v{Services.Platform.UpdateCheckService.CurrentVersion}.\n\nOpen the download page?",
-                    "Anchor Launcher — update available",
-                    System.Windows.MessageBoxButton.YesNo,
-                    System.Windows.MessageBoxImage.Information);
-
-                if (choice == System.Windows.MessageBoxResult.Yes && !string.IsNullOrWhiteSpace(result.Url))
-                    System.Diagnostics.Process.Start(
-                        new System.Diagnostics.ProcessStartInfo(result.Url!) { UseShellExecute = true });
+                var dlg = new Views.UpdateDialog(
+                    result.Latest,
+                    Services.Platform.UpdateCheckService.CurrentVersion,
+                    result.Notes,
+                    result.Url) { Owner = this };
+                dlg.ShowDialog();
             });
         }
         catch (System.Exception ex)

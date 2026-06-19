@@ -25,6 +25,9 @@ public partial class App : Application
         AppDomain.CurrentDomain.UnhandledException += (_, ev) => LogCrash("AppDomain", ev.ExceptionObject as Exception);
         System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (_, ev) => { LogCrash("Task", ev.Exception); ev.SetObserved(); };
 
+        // Remove the leftover *.old.exe left behind by a previous in-app self-update.
+        Services.Platform.SelfUpdateService.CleanupAfterUpdate();
+
         var splash = new SplashWindow();
         splash.SplashCompleted = RouteAfterSplashAsync;
         splash.Show();

@@ -9,13 +9,14 @@ public class UpdateCheckResult
     public bool    UpdateAvailable { get; set; }
     public string  Latest          { get; set; } = string.Empty;
     public string? Url             { get; set; }
+    public string  Notes           { get; set; } = string.Empty;
     public string  Message         { get; set; } = string.Empty;
 }
 
 /// <summary>Compares the running version against a hosted version.json feed.</summary>
 public class UpdateCheckService
 {
-    public const string CurrentVersion = "1.0.1";
+    public const string CurrentVersion = "1.0.2";
     private const string VersionUrl = "https://engionite.github.io/AnchorLauncher/version.json";
 
     private static readonly HttpClient _http = new()
@@ -32,6 +33,7 @@ public class UpdateCheckService
             using var doc = JsonDocument.Parse(body);
             var latest = doc.RootElement.TryGetProperty("version", out var v) ? v.GetString() ?? CurrentVersion : CurrentVersion;
             var url    = doc.RootElement.TryGetProperty("url", out var u) ? u.GetString() : null;
+            var notes  = doc.RootElement.TryGetProperty("notes", out var nt) ? nt.GetString() ?? string.Empty : string.Empty;
 
             var newer = CompareVersions(latest, CurrentVersion) > 0;
             return new UpdateCheckResult
@@ -39,6 +41,7 @@ public class UpdateCheckService
                 UpdateAvailable = newer,
                 Latest          = latest,
                 Url             = url,
+                Notes           = notes,
                 Message         = newer ? $"Update available: v{latest}" : "You're on the latest version (v" + CurrentVersion + ")."
             };
         }
