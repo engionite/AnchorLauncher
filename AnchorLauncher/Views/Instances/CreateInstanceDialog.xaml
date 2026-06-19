@@ -253,6 +253,16 @@
                     </Border>
                 </StackPanel>
 
+                <!-- Copy game settings from another instance (optional) -->
+                <TextBlock Text="{Binding [ci_copysettings], Source={x:Static loc:Loc.I}}"
+                           FontFamily="{StaticResource PrimaryFont}" FontSize="10" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextDisabledBrush}" Margin="0,12,0,7"/>
+                <ComboBox Style="{StaticResource AnchorComboBoxStyle}"
+                          ItemContainerStyle="{StaticResource AnchorComboBoxItemStyle}"
+                          ItemsSource="{Binding ExistingInstances}"
+                          SelectedItem="{Binding CopySettingsFrom}"
+                          DisplayMemberPath="Name"/>
+
                 <!-- Error -->
                 <TextBlock Text="{Binding ErrorMessage}"
                            FontFamily="{StaticResource PrimaryFont}"

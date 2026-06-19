@@ -166,19 +166,67 @@ public class InstanceContentService
 
             pack.FullPath  = target;
             pack.IsEnabled = enabled;
+
+            // Actually select it in the loader, otherwise the pack just sits in shaderpacks/
+            // unused (Iris/OptiFine default to no shader until one is chosen).
+            var gameDir = Directory.GetParent(Path.GetDirectoryName(target)!)?.FullName;
+            if (gameDir != null) ApplyShaderSelection(gameDir, pack.FileName, enabled);
         }
         catch (Exception ex) { Debug.WriteLine($"[Content] SetShaderpackEnabled failed: {ex.Message}"); }
     }
 
-    /// <summary>Copies a dropped .zip into the instance's shaderpacks/ folder.</summary>
+    /// <summary>Copies a dropped .zip into the instance's shaderpacks/ folder and activates it.</summary>
     public void InstallShaderpack(string gameDir, string sourceZip)
     {
         var dir = Path.Combine(gameDir, "shaderpacks");
         Directory.CreateDirectory(dir);
         var dest = Path.Combine(dir, Path.GetFileName(sourceZip));
         File.Copy(sourceZip, dest, overwrite: true);
-        Debug.WriteLine($"[Content] Shaderpack installed: {dest}");
+        ApplyShaderSelection(gameDir, Path.GetFileName(sourceZip), enabled: true);
+        Debug.WriteLine($"[Content] Shaderpack installed + activated: {dest}");
     }
+
+    /// <summary>
+    /// Writes the loader's shader selection so a pack actually loads in game. Covers Iris/Oculus
+    /// (config/iris.properties) and OptiFine (optionsshaders.txt) — whichever the instance uses.
+    /// Requires Iris or OptiFine to be installed; with neither, there's nothing to drive.
+    /// </summary>
+    private static void ApplyShaderSelection(string gameDir, string? shaderFile, bool enabled)
+    {
+        try
+        {
+            // Iris / Oculus
+            var cfgDir = Path.Combine(gameDir, "config");
+            Directory.CreateDirectory(cfgDir);
+            var irisPath = Path.Combine(cfgDir, "iris.properties");
+            var iris = ReadProps(irisPath);
+            iris["enableShaders"] = enabled ? "true" : "false";
+            if (enabled && !string.IsNullOrEmpty(shaderFile)) iris["shaderPack"] = shaderFile;
+            WriteProps(irisPath, iris);
+
+            // OptiFine
+            var ofPath = Path.Combine(gameDir, "optionsshaders.txt");
+            var of = ReadProps(ofPath);
+            of["shaderPack"] = enabled && !string.IsNullOrEmpty(shaderFile) ? shaderFile : "OFF";
+            WriteProps(ofPath, of);
+        }
+        catch (Exception ex) { Debug.WriteLine($"[Content] ApplyShaderSelection failed: {ex.Message}"); }
+    }
+
+    private static Dictionary<string, string> ReadProps(string path)
+    {
+        var d = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (!File.Exists(path)) return d;
+        foreach (var line in File.ReadAllLines(path))
+        {
+            var i = line.IndexOf('=');
+            if (i > 0) d[line[..i].Trim()] = line[(i + 1)..];
+        }
+        return d;
+    }
+
+    private static void WriteProps(string path, Dictionary<string, string> props)
+        => File.WriteAllLines(path, props.Select(kv => $"{kv.Key}={kv.Value}"));
 
     public void DeleteShaderpack(ModEntry pack)
     {
@@ -188,6 +236,34 @@ public class InstanceContentService
             else if (Directory.Exists(pack.FullPath)) Directory.Delete(pack.FullPath, true);
         }
         catch (Exception ex) { Debug.WriteLine($"[Content] DeleteShaderpack failed: {ex.Message}"); }
+    }
+
+    // ── Game settings (options.txt etc.) ────────────────────────────────────────
+
+    /// <summary>The in-game settings files a player tunes per instance (video/controls/keybinds,
+    /// OptiFine, shader selection, server list, saved hotbars).</summary>
+    private static readonly string[] GameSettingsFiles =
+    {
+        "options.txt", "optionsof.txt", "optionsshaders.txt", "servers.dat", "servers.dat_old", "hotbar.nbt"
+    };
+
+    /// <summary>Copies a player's in-game settings from one instance to another, so a freshly
+    /// created instance starts with the same Minecraft options instead of vanilla defaults.</summary>
+    public void CopyGameSettings(string sourceGameDir, string targetGameDir)
+    {
+        try
+        {
+            if (!Directory.Exists(sourceGameDir)) return;
+            Directory.CreateDirectory(targetGameDir);
+            foreach (var name in GameSettingsFiles)
+            {
+                var src = Path.Combine(sourceGameDir, name);
+                if (File.Exists(src))
+                    File.Copy(src, Path.Combine(targetGameDir, name), overwrite: true);
+            }
+            Debug.WriteLine($"[Content] Game settings copied {sourceGameDir} → {targetGameDir}");
+        }
+        catch (Exception ex) { Debug.WriteLine($"[Content] CopyGameSettings failed: {ex.Message}"); }
     }
 
     // ── Worlds ──────────────────────────────────────────────────────────────────

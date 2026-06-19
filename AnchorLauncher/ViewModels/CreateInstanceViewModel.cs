@@ -13,6 +13,7 @@ public partial class CreateInstanceViewModel : ObservableObject
     private readonly MojangManifestService _manifest = new();
     private readonly InstanceService       _instances = new();
     private readonly ModLoaderService      _loaders   = new();
+    private readonly InstanceContentService _content  = new();
 
     private MojangVersionManifest? _fullManifest;
 
@@ -39,6 +40,11 @@ public partial class CreateInstanceViewModel : ObservableObject
     [ObservableProperty] private bool _showBeta;
     [ObservableProperty] private bool _showAlpha;
 
+    // Optionally seed the new instance's in-game settings (options.txt etc.) from an existing one,
+    // so players don't have to re-tune Minecraft's options for every instance they create.
+    [ObservableProperty] private ObservableCollection<MinecraftInstance> _existingInstances = new();
+    [ObservableProperty] private MinecraftInstance? _copySettingsFrom;
+
     [ObservableProperty] private bool   _isLoadingVersions;
     [ObservableProperty] private bool   _isCreating;
     [ObservableProperty] private double _progress;
@@ -57,6 +63,7 @@ public partial class CreateInstanceViewModel : ObservableObject
         {
             IsLoadingVersions = true;
             ErrorMessage = string.Empty;
+            ExistingInstances = new ObservableCollection<MinecraftInstance>(await _instances.LoadAllAsync());
             _fullManifest = await _manifest.GetManifestAsync();
             if (_fullManifest == null)
             {
@@ -234,6 +241,12 @@ public partial class CreateInstanceViewModel : ObservableObject
                 ProgressStatus  = $"Installing {SelectedLoader}…";
                 await _loaders.InstallAsync(instance, progress);
                 await _instances.SaveAsync(instance); // persist LaunchVersionId/loader version
+            }
+
+            if (CopySettingsFrom != null)
+            {
+                ProgressStatus = "Copying game settings…";
+                _content.CopyGameSettings(CopySettingsFrom.GameDir, instance.GameDir);
             }
 
             instance.Status = InstanceStatus.Idle;

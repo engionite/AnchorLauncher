@@ -621,7 +621,7 @@
                     </Expander.Header>
                     <Border Background="{StaticResource Surface1Brush}" CornerRadius="8" Padding="16,14" Margin="0,8,0,0">
                         <StackPanel>
-                            <TextBlock Text="Anchor Launcher v1.0.0" FontFamily="{StaticResource PrimaryFont}"
+                            <TextBlock Text="{Binding AppVersion, StringFormat='Anchor Launcher {0}'}" FontFamily="{StaticResource PrimaryFont}"
                                        FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
                             <TextBlock Text="Development Project: Anchor Analytics" FontFamily="{StaticResource PrimaryFont}"
                                        FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,3,0,0"/>

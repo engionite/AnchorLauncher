@@ -14,6 +14,25 @@ public record EffectiveLaunchOptions(
         s.WindowWidth  ?? g.WindowWidth,
         s.WindowHeight ?? g.WindowHeight,
         s.Fullscreen   ?? g.Fullscreen,
-        string.IsNullOrWhiteSpace(s.JvmArgs) ? g.JvmArgs : s.JvmArgs,
+        ResolveJvmArgs(g, s),
         ElyPatch: g.ElyPatchMode);
+
+    /// <summary>
+    /// In Optimized launch mode, prepend the Aikar-style G1GC flag set (this is what makes the
+    /// "Optimized Launch" toggle actually do something), then append any user flags it doesn't
+    /// already cover. In Standard mode, just use the user/instance JVM args.
+    /// </summary>
+    private static string ResolveJvmArgs(GlobalSettings g, InstanceSettings s)
+    {
+        var userArgs = string.IsNullOrWhiteSpace(s.JvmArgs) ? g.JvmArgs : s.JvmArgs;
+        if (g.LaunchPerfMode != LaunchPerfMode.Optimized)
+            return userArgs;
+
+        var optimized = string.Join(" ", GlobalSettings.OptimizedFlags);
+        var extras = (userArgs ?? string.Empty)
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Where(a => !optimized.Contains(a, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        return extras.Length == 0 ? optimized : optimized + " " + string.Join(" ", extras);
+    }
 }
