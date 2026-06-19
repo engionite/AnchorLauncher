@@ -16,7 +16,7 @@ public class UpdateCheckResult
 /// <summary>Compares the running version against a hosted version.json feed.</summary>
 public class UpdateCheckService
 {
-    public const string CurrentVersion = "1.0.3";
+    public const string CurrentVersion = "1.0.4";
     private const string VersionUrl = "https://engionite.github.io/AnchorLauncher/version.json";
 
     private static readonly HttpClient _http = new()
@@ -29,7 +29,9 @@ public class UpdateCheckService
     {
         try
         {
-            var body = await _http.GetStringAsync(VersionUrl);
+            // Cache-bust so a freshly published version is detected immediately instead of waiting
+            // out GitHub Pages' CDN cache (~10 min).
+            var body = await _http.GetStringAsync($"{VersionUrl}?_={DateTime.UtcNow.Ticks}");
             using var doc = JsonDocument.Parse(body);
             var latest = doc.RootElement.TryGetProperty("version", out var v) ? v.GetString() ?? CurrentVersion : CurrentVersion;
             var url    = doc.RootElement.TryGetProperty("url", out var u) ? u.GetString() : null;

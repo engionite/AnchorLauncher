@@ -1,5 +1,5 @@
 {
-  "version": "1.0.3",
+  "version": "1.0.4",
   "url": "https://github.com/engionite/AnchorLauncher/releases/latest",
-  "notes": "v1.0.3 — Optimized Launch now really applies the performance flags; shaderpacks activate in-game; copy your Minecraft settings into new instances; fixed uninstaller; correct version shown in About. (1.0.2 added one-click in-app updates with the redesigned prompt.)"
+  "notes": "v1.0.4 — updates are detected instantly now, the old launcher closes itself when you update (no more double windows), two new news posts, and the mod-conflict dialog is fully translated. Builds on 1.0.3 (Optimized Launch, shader activation, copy game settings, fixed uninstaller)."
 }

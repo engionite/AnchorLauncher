@@ -51,8 +51,9 @@ public partial class UpdateDialog : Window
         try
         {
             await SelfUpdateService.DownloadAndApplyAsync(progress, _cts.Token);
-            // The new build is already launching — quit so it can take over.
-            Application.Current.Shutdown();
+            // The new build is already launching — force-exit so we never leave two launchers
+            // running (Application.Shutdown can linger if the tray icon/threads keep the process up).
+            Environment.Exit(0);
         }
         catch (OperationCanceledException) { /* dialog closed mid-download */ }
         catch (Exception ex)

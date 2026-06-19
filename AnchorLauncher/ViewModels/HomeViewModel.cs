@@ -181,6 +181,8 @@ public partial class HomeViewModel : ObservableObject
         var loc = Services.Platform.Loc.I;
         News = new ObservableCollection<NewsItem>
         {
+            new() { Date = "v1.0.3", Title = loc["news5_t"], Summary = loc["news5_b"] },
+            new() { Date = "v1.0.2", Title = loc["news6_t"], Summary = loc["news6_b"] },
             new() { Date = "Beta",    Title = loc["news4_t"], Summary = loc["news4_b"] },
             new() { Date = "v1.0",    Title = loc["news1_t"], Summary = loc["news1_b"] },
             new() { Date = "Auth",    Title = loc["news2_t"], Summary = loc["news2_b"] },

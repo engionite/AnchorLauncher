@@ -44,6 +44,11 @@ public static class SelfUpdateService
     {
         try
         {
+            // An older build that didn't force-exit may have left its renamed self running — close it
+            // so the user is never left with two launchers after an update.
+            foreach (var p in Process.GetProcessesByName(Path.GetFileNameWithoutExtension(OldName)))
+                try { p.Kill(); p.WaitForExit(2000); } catch { }
+
             var exe = Environment.ProcessPath;
             if (string.IsNullOrEmpty(exe)) return;
             var old = Path.Combine(Path.GetDirectoryName(exe)!, OldName);
