@@ -39,22 +39,29 @@ public static class SelfUpdateService
         catch { return false; }
     }
 
-    /// <summary>Removes the leftover *.old.exe from a previous self-update. Call once at startup.</summary>
-    public static void CleanupAfterUpdate()
+    /// <summary>
+    /// Finishes a self-update at startup: closes the previous version that launched us (its PID is
+    /// passed via <c>--replaced-pid</c>) and removes the leftover *.old.exe. No-op on a normal launch.
+    /// </summary>
+    public static void FinishPendingUpdate(string[] args)
     {
         try
         {
-            // An older build that didn't force-exit may have left its renamed self running — close it
-            // so the user is never left with two launchers after an update.
-            foreach (var p in Process.GetProcessesByName(Path.GetFileNameWithoutExtension(OldName)))
-                try { p.Kill(); p.WaitForExit(2000); } catch { }
+            // Close the exact predecessor process by the PID it handed us. Reliable regardless of the
+            // old build's exit behaviour or how Windows reports its (renamed) image name.
+            var idx = Array.FindIndex(args, a => a.Equals("--replaced-pid", StringComparison.OrdinalIgnoreCase));
+            if (idx >= 0 && idx + 1 < args.Length && int.TryParse(args[idx + 1], out var pid))
+            {
+                try { var old = Process.GetProcessById(pid); old.Kill(); old.WaitForExit(3000); }
+                catch { /* already exited */ }
+            }
 
             var exe = Environment.ProcessPath;
             if (string.IsNullOrEmpty(exe)) return;
-            var old = Path.Combine(Path.GetDirectoryName(exe)!, OldName);
-            if (File.Exists(old)) File.Delete(old);
+            var oldExe = Path.Combine(Path.GetDirectoryName(exe)!, OldName);
+            if (File.Exists(oldExe)) { try { File.Delete(oldExe); } catch { } }
         }
-        catch (Exception ex) { Debug.WriteLine($"[SelfUpdate] cleanup skipped: {ex.Message}"); }
+        catch (Exception ex) { Debug.WriteLine($"[SelfUpdate] FinishPendingUpdate skipped: {ex.Message}"); }
     }
 
     /// <summary>
@@ -112,8 +119,14 @@ public static class SelfUpdateService
             throw;
         }
 
-        // 4. Launch the freshly-installed build. Caller shuts this instance down next.
-        Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true, WorkingDirectory = dir });
+        // 4. Launch the freshly-installed build, handing it our PID so it can close us — this
+        //    guarantees a single launcher even if our own exit is delayed. Caller also exits.
+        Process.Start(new ProcessStartInfo(exe)
+        {
+            UseShellExecute = true,
+            WorkingDirectory = dir,
+            Arguments = $"--replaced-pid {Environment.ProcessId}"
+        });
     }
 
     private static bool LooksLikeExe(string path)

@@ -1,5 +1,5 @@
 {
-  "version": "1.0.4",
+  "version": "1.0.5",
   "url": "https://github.com/engionite/AnchorLauncher/releases/latest",
-  "notes": "v1.0.4 — updates are detected instantly now, the old launcher closes itself when you update (no more double windows), two new news posts, and the mod-conflict dialog is fully translated. Builds on 1.0.3 (Optimized Launch, shader activation, copy game settings, fixed uninstaller)."
+  "notes": "v1.0.5 — the old launcher now reliably closes itself the moment an update finishes (the new build closes the exact previous process), so you never see two windows. Includes 1.0.4 (instant update detection, news, conflict-dialog translation)."
 }
