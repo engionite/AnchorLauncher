@@ -334,10 +334,8 @@ public class MicrosoftAuthService
         {
             Debug.WriteLine($"[MsAuth] STEP 4 403 from login_with_xbox: {await SafeReadBodyAsync(resp)}");
             throw new MicrosoftAuthException(
-                "Microsoft sign-in isn't available in this build yet. Anchor's Microsoft app is still " +
-                "awaiting Minecraft API approval (Microsoft returns 403 — this affects every account, " +
-                "not yours specifically). Please use Ely.by for now; Microsoft accounts will work once " +
-                "approval comes through.");
+                "The Minecraft service refused the sign-in (HTTP 403). This is usually temporary — " +
+                "please try again in a moment. If it keeps happening you can use Ely.by instead.");
         }
         if (!resp.IsSuccessStatusCode)
             throw new MicrosoftAuthException(
