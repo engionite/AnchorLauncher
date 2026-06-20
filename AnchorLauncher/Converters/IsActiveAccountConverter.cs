@@ -14,6 +14,11 @@ public class IsActiveAccountConverter : IMultiValueConverter
         return false;
     }
 
+    // One-way multi-binding: nothing flows back to the sources.
     public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
-        => throw new NotImplementedException();
+    {
+        var result = new object[targetTypes.Length];
+        for (int i = 0; i < result.Length; i++) result[i] = Binding.DoNothing;
+        return result;
+    }
 }

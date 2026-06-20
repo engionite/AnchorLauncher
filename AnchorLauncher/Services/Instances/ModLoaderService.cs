@@ -243,27 +243,30 @@ public class ModLoaderService
         // 2) The installer needs a Java runtime and a launcher_profiles.json in the target dir
         progress?.Report(DownloadProgress.At(45, "Preparing installer runtime…"));
         var javaExe = await _java.ResolveJavaAsync(17, progress, ct)
-                      ?? throw new InvalidOperationException($"{label} install needs Java 17, which could not be resolved.");
+                      ?? throw new InvalidOperationException(string.Format(Platform.Loc.I["ml_e_java17"], label));
 
         EnsureLauncherProfilesStub();
         var before = SnapshotVersionDirs();
 
         // 3) Run headless client install against the shared store (acts as .minecraft)
         progress?.Report(DownloadProgress.At(60, $"Running {label} installer…"));
-        var exit = await RunProcessAsync(
+        var (exit, log) = await RunProcessAsync(
             javaExe,
             new[] { "-jar", installer, "--installClient", LauncherStorageService.AppDataRoot },
             ct);
 
-        if (exit != 0)
-            Debug.WriteLine($"[ModLoader] {label} installer exited with code {exit}.");
-
         try { File.Delete(installer); } catch { }
+
+        if (exit != 0)
+            throw new InvalidOperationException(
+                string.Format(Platform.Loc.I["ml_e_installerfail"], label, instance.Version, exit) +
+                (string.IsNullOrWhiteSpace(log) ? "" : $"\n\n{LastLines(log, 8)}"));
 
         // 4) Detect the profile the installer produced
         var profileId = DetectNewProfile(before, instance.Version, isNeo)
                         ?? throw new InvalidOperationException(
-                            $"{label} installer did not produce a version profile. Check the installer log.");
+                            string.Format(Platform.Loc.I["ml_e_noprofile"], label, instance.Version) +
+                            (string.IsNullOrWhiteSpace(log) ? "" : $"\n\n{LastLines(log, 8)}"));
 
         instance.LaunchVersionId = profileId;
         progress?.Report(DownloadProgress.At(100, $"{label} {version} installed."));
@@ -281,7 +284,7 @@ public class ModLoaderService
         else if (promos.TryGetProperty($"{mc}-latest", out var lat)) forge = lat.GetString();
 
         if (string.IsNullOrEmpty(forge))
-            throw new InvalidOperationException($"No Forge build is published for {mc}.");
+            throw new InvalidOperationException(string.Format(Platform.Loc.I["ml_e_noforge"], mc));
 
         return (forge, ForgeInstallerUrl(mc, forge));
     }
@@ -298,7 +301,7 @@ public class ModLoaderService
         var match = all.Where(v => v.StartsWith(prefix, StringComparison.Ordinal))
                        .OrderBy(v => v, StringComparer.Ordinal)
                        .LastOrDefault()
-                    ?? throw new InvalidOperationException($"No NeoForge build matches {mc}.");
+                    ?? throw new InvalidOperationException(string.Format(Platform.Loc.I["ml_e_noneoforge"], mc));
 
         return (match, NeoInstallerUrl(match));
     }
@@ -362,7 +365,8 @@ public class ModLoaderService
                ?? candidates.FirstOrDefault();
     }
 
-    private static Task<int> RunProcessAsync(string exe, string[] args, CancellationToken ct) => Task.Run(() =>
+    /// <summary>Runs a process, capturing the tail of its combined output so a failure can report why.</summary>
+    private static Task<(int Exit, string Output)> RunProcessAsync(string exe, string[] args, CancellationToken ct) => Task.Run(() =>
     {
         var psi = new ProcessStartInfo(exe)
         {
@@ -373,10 +377,19 @@ public class ModLoaderService
         };
         foreach (var a in args) psi.ArgumentList.Add(a);
 
+        var tail = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        void Capture(string? line)
+        {
+            if (line == null) return;
+            Debug.WriteLine($"[Installer] {line}");
+            tail.Enqueue(line);
+            while (tail.Count > 40) tail.TryDequeue(out _);
+        }
+
         using var proc = Process.Start(psi)
                          ?? throw new InvalidOperationException("Failed to start installer process.");
-        proc.OutputDataReceived += (_, e) => { if (e.Data != null) Debug.WriteLine($"[Installer] {e.Data}"); };
-        proc.ErrorDataReceived  += (_, e) => { if (e.Data != null) Debug.WriteLine($"[Installer] {e.Data}"); };
+        proc.OutputDataReceived += (_, e) => Capture(e.Data);
+        proc.ErrorDataReceived  += (_, e) => Capture(e.Data);
         proc.BeginOutputReadLine();
         proc.BeginErrorReadLine();
 
@@ -388,6 +401,12 @@ public class ModLoaderService
                 throw new OperationCanceledException(ct);
             }
         }
-        return proc.ExitCode;
+        return (proc.ExitCode, string.Join("\n", tail));
     }, ct);
+
+    private static string LastLines(string text, int n)
+    {
+        var lines = text.Split('\n');
+        return lines.Length <= n ? text : string.Join("\n", lines[^n..]);
+    }
 }

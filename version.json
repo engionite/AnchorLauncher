@@ -1,5 +1,5 @@
 {
-  "version": "1.0.5",
+  "version": "1.0.6",
   "url": "https://github.com/engionite/AnchorLauncher/releases/latest",
-  "notes": "v1.0.5 — the old launcher now reliably closes itself the moment an update finishes (the new build closes the exact previous process), so you never see two windows. Includes 1.0.4 (instant update detection, news, conflict-dialog translation)."
+  "notes": "v1.0.6 — Anchor now shows your activity on Discord (version + GitHub/Download buttons), prompts you live the moment a new version ships (no restart needed), and gives clear, fully translated messages when a Forge/NeoForge install fails. Plus a security & reliability audit pass."
 }

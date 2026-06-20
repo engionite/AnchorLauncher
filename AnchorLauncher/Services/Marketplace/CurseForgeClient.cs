@@ -11,28 +11,43 @@ public class CurseForgeClient
     private const string Base   = "https://api.curseforge.com/v1";
     private const int    GameId = 432;
 
-    // The CurseForge API key must stay private (CurseForge's terms forbid publishing it), so it is NOT
-    // stored in source. It's injected at build time from the ANCHOR_CF_KEY env var via AssemblyMetadata
-    // (see AnchorLauncher.csproj). With no key, CurseForge results are simply skipped — Modrinth still works.
-    private static readonly string ApiKey =
+    // The shipping CurseForge key is injected at build time from the ANCHOR_CF_KEY env var via
+    // AssemblyMetadata (see AnchorLauncher.csproj) — it must NEVER be hardcoded (public repo).
+    // A user can override it in Settings → Services (UserApiKey). With no key, CurseForge results
+    // are simply skipped — Modrinth still works.
+    private static readonly string _buildKey =
         System.Reflection.Assembly.GetExecutingAssembly()
             .GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
             .Cast<System.Reflection.AssemblyMetadataAttribute>()
             .FirstOrDefault(a => a.Key == "CurseForgeApiKey")?.Value
         ?? string.Empty;
 
-    public static bool HasApiKey => !string.IsNullOrWhiteSpace(ApiKey);
+    /// <summary>Optional user-supplied key (Settings → Services); overrides the build key when set.</summary>
+    public static string? UserApiKey { get; set; }
+
+    private static string EffectiveKey =>
+        string.IsNullOrWhiteSpace(UserApiKey) ? _buildKey : UserApiKey!.Trim();
+
+    public static bool HasApiKey => !string.IsNullOrWhiteSpace(EffectiveKey);
 
     private static readonly HttpClient _http = BuildClient();
 
     private static HttpClient BuildClient()
     {
         var c = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
-        if (HasApiKey)
-            c.DefaultRequestHeaders.Add("x-api-key", ApiKey);
         c.DefaultRequestHeaders.Add("Accept", "application/json");
         c.DefaultRequestHeaders.Add("User-Agent", "AnchorLauncher/1.0");
         return c;
+    }
+
+    /// <summary>GET attaching the current effective key per request, so a key change takes effect immediately.</summary>
+    private static async Task<string> GetWithKeyAsync(string url, CancellationToken ct)
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Get, url);
+        if (HasApiKey) req.Headers.Add("x-api-key", EffectiveKey);
+        using var resp = await _http.SendAsync(req, ct);
+        resp.EnsureSuccessStatusCode();
+        return await resp.Content.ReadAsStringAsync(ct);
     }
 
     // ── Search ──────────────────────────────────────────────────────────────────
@@ -51,7 +66,7 @@ public class CurseForgeClient
             if (!string.IsNullOrEmpty(gameVersion)) url += $"&gameVersion={Uri.EscapeDataString(gameVersion)}";
             if (loaderType > 0 && type == ProjectType.Mod) url += $"&modLoaderType={loaderType}";
 
-            var body = await _http.GetStringAsync(url, ct);
+            var body = await GetWithKeyAsync(url, ct);
             using var doc = JsonDocument.Parse(body);
             var root  = doc.RootElement;
 
@@ -107,7 +122,7 @@ public class CurseForgeClient
     {
         try
         {
-            var body = await _http.GetStringAsync(url, ct);
+            var body = await GetWithKeyAsync(url, ct);
             using var doc = JsonDocument.Parse(body);
             if (!doc.RootElement.TryGetProperty("data", out var data) || data.GetArrayLength() == 0)
                 return null;

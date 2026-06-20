@@ -51,12 +51,14 @@ public class GlobalSettings
     public bool         ShowConsoleOnCrash    { get; set; } = true;
     public bool         HideConsoleOnGameClose{ get; set; } = false;
 
-    // ── Services ──
-    public string LogPasteService = "https://api.mclo.gs/1/log";
-    public string MetadataServer  = "https://elyprismlauncher.github.io/meta/v1";
-    public string AssetsServer     = "https://resources.download.minecraft.net";
-    public string CurseForgeApiKey = "$2a$10$bL4bIL5pUWqfcO7KwznLOe5GpCuSUB7KHsElZSi3xc/BfTGAFfWXW";
-    public string ModrinthApiUrl   = "https://api.modrinth.com/v2";
+    // ── Services ── (properties, not fields, so they persist to settings.json)
+    public string LogPasteService { get; set; } = "https://api.mclo.gs/1/log";
+    public string MetadataServer  { get; set; } = "https://elyprismlauncher.github.io/meta/v1";
+    public string AssetsServer    { get; set; } = "https://resources.download.minecraft.net";
+    // Optional user-supplied CurseForge key. The shipping key is injected at build time into
+    // CurseForgeClient (AssemblyMetadata) and must NEVER be hardcoded here — this is a public repo.
+    public string CurseForgeApiKey { get; set; } = "";
+    public string ModrinthApiUrl  { get; set; } = "https://api.modrinth.com/v2";
 
     // ── Minecraft launch behavior ──
     public LaunchPerfMode LaunchPerfMode      { get; set; } = LaunchPerfMode.Standard;

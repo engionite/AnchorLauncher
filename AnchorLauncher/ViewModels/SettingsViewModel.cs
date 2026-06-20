@@ -56,6 +56,10 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _curseForgeApiKey = string.Empty;
     [ObservableProperty] private string _modrinthApiUrl   = "https://api.modrinth.com/v2";
 
+    // Apply a user-supplied CurseForge key to the client immediately (fires on load and on edit).
+    partial void OnCurseForgeApiKeyChanged(string value)
+        => Services.Marketplace.CurseForgeClient.UserApiKey = value;
+
     // ── Minecraft launch ──
     [ObservableProperty] private LaunchPerfMode _launchPerfMode = LaunchPerfMode.Standard;
     [ObservableProperty] private bool   _closeOnLaunch;

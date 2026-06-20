@@ -67,7 +67,7 @@ public partial class CreateInstanceViewModel : ObservableObject
             _fullManifest = await _manifest.GetManifestAsync();
             if (_fullManifest == null)
             {
-                ErrorMessage = "Could not load the version list (offline and no cache).";
+                ErrorMessage = Services.Platform.Loc.I["ci_e_versions"];
                 return;
             }
             ApplyFilter();
@@ -75,7 +75,7 @@ public partial class CreateInstanceViewModel : ObservableObject
         catch (Exception ex)
         {
             Debug.WriteLine($"[CreateVM] LoadVersionsAsync failed: {ex}");
-            ErrorMessage = "Failed to load versions.";
+            ErrorMessage = Services.Platform.Loc.I["ci_e_versions"];
         }
         finally
         {
@@ -175,7 +175,7 @@ public partial class CreateInstanceViewModel : ObservableObject
         {
             Debug.WriteLine($"[CreateVM] DebouncedRefreshAsync failed: {ex}");
             if (seq == _loaderFetchSeq)
-                ErrorMessage = "Could not load loader versions.";
+                ErrorMessage = Services.Platform.Loc.I["ci_e_loaderlist"];
         }
         finally
         {
@@ -191,7 +191,7 @@ public partial class CreateInstanceViewModel : ObservableObject
         SelectedLoaderVersion = list.FirstOrDefault(v => v.Stable)?.Version ?? LoaderVersions.FirstOrDefault();
 
         if (LoaderVersions.Count == 0)
-            ErrorMessage = $"No {loader} versions available for {mcVersion} yet. Try an older Minecraft version.";
+            ErrorMessage = string.Format(Services.Platform.Loc.I["ci_e_noloaderver"], loader, mcVersion);
     }
 
     // ── Create ──────────────────────────────────────────────────────────────────
@@ -203,17 +203,17 @@ public partial class CreateInstanceViewModel : ObservableObject
 
         if (string.IsNullOrWhiteSpace(InstanceName))
         {
-            ErrorMessage = "Enter an instance name.";
+            ErrorMessage = Services.Platform.Loc.I["ci_e_name"];
             return;
         }
         if (SelectedVersion == null)
         {
-            ErrorMessage = "Select a Minecraft version.";
+            ErrorMessage = Services.Platform.Loc.I["ci_e_version"];
             return;
         }
         if (SelectedLoader != ModLoaderType.Vanilla && string.IsNullOrEmpty(SelectedLoaderVersion))
         {
-            ErrorMessage = "Select a loader version.";
+            ErrorMessage = Services.Platform.Loc.I["ci_e_loaderver"];
             return;
         }
 
@@ -222,7 +222,7 @@ public partial class CreateInstanceViewModel : ObservableObject
             IsCreating   = true;
             ErrorMessage = string.Empty;
             Progress     = 0;
-            ProgressStatus = "Creating instance…";
+            ProgressStatus = Services.Platform.Loc.I["ci_s_creating"];
 
             var progress = new Progress<DownloadProgress>(p =>
             {
@@ -238,25 +238,25 @@ public partial class CreateInstanceViewModel : ObservableObject
             if (SelectedLoader != ModLoaderType.Vanilla)
             {
                 instance.Status = InstanceStatus.Installing;
-                ProgressStatus  = $"Installing {SelectedLoader}…";
+                ProgressStatus  = string.Format(Services.Platform.Loc.I["ci_s_installing"], SelectedLoader);
                 await _loaders.InstallAsync(instance, progress);
                 await _instances.SaveAsync(instance); // persist LaunchVersionId/loader version
             }
 
             if (CopySettingsFrom != null)
             {
-                ProgressStatus = "Copying game settings…";
+                ProgressStatus = Services.Platform.Loc.I["ci_s_copying"];
                 _content.CopyGameSettings(CopySettingsFrom.GameDir, instance.GameDir);
             }
 
             instance.Status = InstanceStatus.Idle;
-            ProgressStatus  = "Done.";
+            ProgressStatus  = Services.Platform.Loc.I["ci_s_done"];
             Created?.Invoke(this, instance);
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"[CreateVM] CreateAsync failed: {ex}");
-            ErrorMessage = $"Creation failed: {ex.Message}";
+            ErrorMessage = $"{Services.Platform.Loc.I["ci_e_failed"]} {ex.Message}";
         }
         finally
         {

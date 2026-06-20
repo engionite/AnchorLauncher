@@ -16,6 +16,9 @@ namespace AnchorLauncher;
 
 public partial class App : Application
 {
+    // Lives for the whole app session; shows "Anchor Launcher" on the user's Discord profile.
+    private readonly Services.Platform.DiscordRichPresenceService _discord = new();
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -28,6 +31,9 @@ public partial class App : Application
         // After a self-update: close the previous version (passed via --replaced-pid) and remove its
         // leftover *.old.exe, so an update never leaves two launchers running.
         Services.Platform.SelfUpdateService.FinishPendingUpdate(e.Args);
+
+        // Publish Discord Rich Presence (best-effort; no-ops if Discord isn't running / id unset).
+        _discord.Start();
 
         var splash = new SplashWindow();
         splash.SplashCompleted = RouteAfterSplashAsync;
@@ -49,6 +55,9 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        // Clear the Discord presence as we shut down.
+        try { _discord.Dispose(); } catch { /* never block shutdown */ }
+
         try
         {
             // Auto-sync on close (bounded so a hung copy can't trap the shutdown)

@@ -16,6 +16,7 @@ public class AccountTypeToColorConverter : IValueConverter
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         => value is AccountType t && t == AccountType.ElyBy ? ElyByBrush : MicrosoftBrush;
 
+    // One-way converter: nothing flows back to the source.
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        => throw new NotImplementedException();
+        => Binding.DoNothing;
 }

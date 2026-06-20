@@ -109,28 +109,54 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>Background "check for updates on startup": offers the download page only when a newer
-    /// version is published. Silent when the feed is unreachable or already up to date.</summary>
+    private string? _lastPromptedUpdate;
+    private bool _updateDialogOpen;
+    private System.Windows.Threading.DispatcherTimer? _updateTimer;
+
+    /// <summary>Checks for updates at startup, then keeps polling every 5 minutes so an update
+    /// prompt appears live while the launcher is open — no restart needed.</summary>
     private async System.Threading.Tasks.Task CheckForUpdatesOnStartupAsync()
+    {
+        await CheckAndPromptUpdateAsync();
+
+        _updateTimer = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = System.TimeSpan.FromMinutes(5)
+        };
+        _updateTimer.Tick += async (_, _) => await CheckAndPromptUpdateAsync();
+        _updateTimer.Start();
+    }
+
+    /// <summary>Polls the feed; shows the update dialog once per newer version. Silent when offline,
+    /// already up to date, already prompted for this version, or a dialog is already showing.</summary>
+    private async System.Threading.Tasks.Task CheckAndPromptUpdateAsync()
     {
         try
         {
+            if (_updateDialogOpen) return;
             var result = await new Services.Platform.UpdateCheckService().CheckAsync();
-            if (!result.UpdateAvailable) return;
+            if (!result.UpdateAvailable || result.Latest == _lastPromptedUpdate) return;
+            _lastPromptedUpdate = result.Latest;
 
             await Dispatcher.InvokeAsync(() =>
             {
-                var dlg = new Views.UpdateDialog(
-                    result.Latest,
-                    Services.Platform.UpdateCheckService.CurrentVersion,
-                    result.Notes,
-                    result.Url) { Owner = this };
-                dlg.ShowDialog();
+                if (_updateDialogOpen) return;
+                _updateDialogOpen = true;
+                try
+                {
+                    var dlg = new Views.UpdateDialog(
+                        result.Latest,
+                        Services.Platform.UpdateCheckService.CurrentVersion,
+                        result.Notes,
+                        result.Url) { Owner = this };
+                    dlg.ShowDialog();
+                }
+                finally { _updateDialogOpen = false; }
             });
         }
         catch (System.Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[MainWindow] startup update check failed: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[MainWindow] update check failed: {ex.Message}");
         }
     }
 
