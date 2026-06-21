@@ -83,8 +83,8 @@ public sealed class DiscordRichPresenceService : IDisposable
             assets     = new { large_image = LargeImageKey, large_text = AppName },
             buttons    = new[]
             {
-                new { label = "GitHub",   url = GitHubUrl },
-                new { label = "Download", url = DownloadUrl },
+                new { label = "Download Anchor Launcher", url = DownloadUrl },
+                new { label = "View on GitHub",           url = GitHubUrl },
             },
         };
 

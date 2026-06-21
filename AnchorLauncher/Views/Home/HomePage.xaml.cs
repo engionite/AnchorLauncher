@@ -67,4 +67,11 @@ public partial class HomePage : Page
         HeroWallA.BeginAnimation(OpacityProperty, new DoubleAnimation(_heroShowingB ? 0 : 0.5, dur) { EasingFunction = ease });
         HeroWallB.BeginAnimation(OpacityProperty, new DoubleAnimation(_heroShowingB ? 0.5 : 0, dur) { EasingFunction = ease });
     }
+
+    private void NewsCard_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is not Models.Home.NewsItem item) return;
+        try { new NewsDetailDialog(item) { Owner = Window.GetWindow(this) }.ShowDialog(); }
+        catch (Exception ex) { Debug.WriteLine($"[HomePage] news detail failed: {ex}"); }
+    }
 }

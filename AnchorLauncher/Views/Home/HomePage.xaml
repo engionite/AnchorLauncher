@@ -313,32 +313,41 @@
                     <StackPanel>
                         <TextBlock Text="{Binding [home_news], Source={x:Static loc:Loc.I}}" Style="{StaticResource ColumnHeader}"/>
 
-                        <ItemsControl ItemsSource="{Binding News}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type hm:NewsItem}">
-                                    <Border Style="{StaticResource LiftCard}" Margin="0,0,0,10" Padding="12">
-                                        <StackPanel>
-                                            <Border HorizontalAlignment="Left" CornerRadius="4" Padding="7,2"
-                                                    Background="{StaticResource AccentMutedBrush}" Margin="0,0,0,7">
-                                                <TextBlock Text="{Binding Date}"
+                        <!-- Bounded + scrollable so the feed never grows unbounded; each card opens a detail view -->
+                        <ScrollViewer MaxHeight="400" VerticalScrollBarVisibility="Auto" Margin="0,2,0,0">
+                            <ScrollViewer.Resources>
+                                <Style TargetType="ScrollBar" BasedOn="{StaticResource AnchorScrollBarStyle}"/>
+                            </ScrollViewer.Resources>
+                            <ItemsControl ItemsSource="{Binding News}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type hm:NewsItem}">
+                                        <Border Style="{StaticResource LiftCard}" Margin="0,0,6,10" Padding="12"
+                                                Cursor="Hand" MouseLeftButtonUp="NewsCard_Click"
+                                                ToolTip="{Binding [news_clickhint], Source={x:Static loc:Loc.I}}">
+                                            <StackPanel>
+                                                <Border HorizontalAlignment="Left" CornerRadius="4" Padding="7,2"
+                                                        Background="{StaticResource AccentMutedBrush}" Margin="0,0,0,7">
+                                                    <TextBlock Text="{Binding Date}"
+                                                               FontFamily="{StaticResource PrimaryFont}"
+                                                               FontSize="10" FontWeight="SemiBold"
+                                                               Foreground="{StaticResource AccentBrush}"/>
+                                                </Border>
+                                                <TextBlock Text="{Binding Title}"
                                                            FontFamily="{StaticResource PrimaryFont}"
-                                                           FontSize="10" FontWeight="SemiBold"
-                                                           Foreground="{StaticResource AccentBrush}"/>
-                                            </Border>
-                                            <TextBlock Text="{Binding Title}"
-                                                       FontFamily="{StaticResource PrimaryFont}"
-                                                       FontSize="13" FontWeight="SemiBold"
-                                                       Foreground="{StaticResource TextPrimaryBrush}"
-                                                       TextWrapping="Wrap"/>
-                                            <TextBlock Text="{Binding Summary}"
-                                                       FontFamily="{StaticResource PrimaryFont}"
-                                                       FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
-                                                       TextWrapping="Wrap" Margin="0,4,0,0"/>
-                                        </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                                                           FontSize="13" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                                           TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding Summary}"
+                                                           FontFamily="{StaticResource PrimaryFont}"
+                                                           FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
+                                                           TextWrapping="Wrap" Margin="0,4,0,0"
+                                                           MaxHeight="48" TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
                     </StackPanel>
                 </Border>
             </Grid>

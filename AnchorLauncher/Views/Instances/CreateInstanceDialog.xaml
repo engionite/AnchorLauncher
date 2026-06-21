@@ -160,6 +160,9 @@
                                  Background="Transparent" BorderThickness="0"
                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                  Margin="4">
+                            <ListBox.Resources>
+                                <Style TargetType="ScrollBar" BasedOn="{StaticResource AnchorScrollBarStyle}"/>
+                            </ListBox.Resources>
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <Grid>
@@ -184,7 +187,7 @@
                             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                 <ProgressBar Style="{StaticResource AnchorProgressBarStyle}"
                                              IsIndeterminate="True" Width="140" Height="3"/>
-                                <TextBlock Text="Loading versions…"
+                                <TextBlock Text="{Binding [ci_loadingversions], Source={x:Static loc:Loc.I}}"
                                            FontFamily="{StaticResource PrimaryFont}"
                                            FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
                                            HorizontalAlignment="Center" Margin="0,10,0,0"/>
@@ -227,6 +230,9 @@
                                      Background="Transparent" BorderThickness="0"
                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                      Margin="4">
+                                <ListBox.Resources>
+                                    <Style TargetType="ScrollBar" BasedOn="{StaticResource AnchorScrollBarStyle}"/>
+                                </ListBox.Resources>
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding}"

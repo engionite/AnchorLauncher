@@ -1,5 +1,5 @@
 {
-  "version": "1.0.8",
+  "version": "1.0.9",
   "url": "https://github.com/engionite/AnchorLauncher/releases/latest",
-  "notes": "v1.0.8 — Faster, more reliable updates. The in-app updater now retries the file swap when antivirus briefly locks the new build (the usual cause of a failed update), retries the download on a network blip, and records the reason if anything still goes wrong. The download is also roughly half the size now thanks to compression, and the update prompt appears sooner."
+  "notes": "v1.0.9 — Polish pass. The Minecraft version lists now use the clean Anchor scrollbar, the Anchor News feed scrolls instead of growing forever, and each news post opens a detailed view with a link to its GitHub release. The Discord presence also shows clearer Download / GitHub buttons."
 }
