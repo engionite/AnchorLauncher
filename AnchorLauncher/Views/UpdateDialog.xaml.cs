@@ -59,6 +59,7 @@ public partial class UpdateDialog : Window
         catch (Exception ex)
         {
             Debug.WriteLine($"[SelfUpdate] failed: {ex.Message}");
+            SelfUpdateService.LogFailure(ex);   // persist the real reason for diagnosis
             ProgressPanel.Visibility = Visibility.Collapsed;
             FailText.Visibility = Visibility.Visible;
             _showWebFallback = true;

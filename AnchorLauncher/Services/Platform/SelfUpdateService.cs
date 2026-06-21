@@ -58,8 +58,10 @@ public static class SelfUpdateService
 
             var exe = Environment.ProcessPath;
             if (string.IsNullOrEmpty(exe)) return;
-            var oldExe = Path.Combine(Path.GetDirectoryName(exe)!, OldName);
-            if (File.Exists(oldExe)) { try { File.Delete(oldExe); } catch { } }
+            var dir = Path.GetDirectoryName(exe)!;
+            // Remove any leftover predecessor(s): the canonical *.old.exe and any unique-named fallbacks.
+            foreach (var stale in Directory.EnumerateFiles(dir, "AnchorLauncher.old*.exe"))
+                try { File.Delete(stale); } catch { /* still exiting; cleaned on a later launch */ }
         }
         catch (Exception ex) { Debug.WriteLine($"[SelfUpdate] FinishPendingUpdate skipped: {ex.Message}"); }
     }
@@ -76,25 +78,36 @@ public static class SelfUpdateService
         var newExe = Path.Combine(dir, NewName);
         var oldExe = Path.Combine(dir, OldName);
 
-        // 1. Download to a side file with progress.
-        if (File.Exists(newExe)) File.Delete(newExe);
-        using (var resp = await _http.GetAsync(DownloadUrl, HttpCompletionOption.ResponseHeadersRead, ct))
+        // 1. Download to a side file with progress (retry once on a transient network failure).
+        for (int attempt = 1; ; attempt++)
         {
-            resp.EnsureSuccessStatusCode();
-            var total = resp.Content.Headers.ContentLength ?? -1;
-            await using var src = await resp.Content.ReadAsStreamAsync(ct);
-            await using var dst = File.Create(newExe);
-            var buffer = new byte[1 << 20];
-            long done = 0; int n; double last = -1;
-            while ((n = await src.ReadAsync(buffer, ct)) > 0)
+            try
             {
-                await dst.WriteAsync(buffer.AsMemory(0, n), ct);
-                done += n;
-                if (total > 0)
+                if (File.Exists(newExe)) File.Delete(newExe);
+                using var resp = await _http.GetAsync(DownloadUrl, HttpCompletionOption.ResponseHeadersRead, ct);
+                resp.EnsureSuccessStatusCode();
+                var total = resp.Content.Headers.ContentLength ?? -1;
+                await using var src = await resp.Content.ReadAsStreamAsync(ct);
+                await using var dst = File.Create(newExe);
+                var buffer = new byte[1 << 20];
+                long done = 0; int n; double last = -1;
+                while ((n = await src.ReadAsync(buffer, ct)) > 0)
                 {
-                    var pct = 100.0 * done / total;
-                    if (pct - last >= 0.5) { progress.Report(pct); last = pct; }
+                    await dst.WriteAsync(buffer.AsMemory(0, n), ct);
+                    done += n;
+                    if (total > 0)
+                    {
+                        var pct = 100.0 * done / total;
+                        if (pct - last >= 0.5) { progress.Report(pct); last = pct; }
+                    }
                 }
+                break;   // downloaded OK
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException && attempt < 2)
+            {
+                Debug.WriteLine($"[SelfUpdate] download attempt {attempt} failed ({ex.Message}); retrying");
+                TryDelete(newExe);
+                await Task.Delay(1500, ct);
             }
         }
 
@@ -106,12 +119,17 @@ public static class SelfUpdateService
         }
         progress.Report(100);
 
-        // 3. Swap by rename (a running exe can be renamed, not overwritten).
+        // 3. Swap by rename (a running exe can be renamed, not overwritten). Each move is retried
+        //    with backoff: a freshly-written unsigned exe is routinely locked for a few seconds by
+        //    antivirus real-time scanning, which is what makes an immediate single-shot move fail.
         if (File.Exists(oldExe)) TryDelete(oldExe);
-        File.Move(exe, oldExe);
+        if (File.Exists(oldExe))            // still locked → step the running exe aside under a unique name
+            oldExe = Path.Combine(dir, $"AnchorLauncher.old.{Environment.ProcessId}.exe");
+
+        await MoveWithRetryAsync(exe, oldExe, ct);
         try
         {
-            File.Move(newExe, exe);
+            await MoveWithRetryAsync(newExe, exe, ct);
         }
         catch
         {
@@ -142,5 +160,34 @@ public static class SelfUpdateService
     private static void TryDelete(string path)
     {
         try { if (File.Exists(path)) File.Delete(path); } catch { }
+    }
+
+    /// <summary>File.Move with backoff — tolerates the transient lock antivirus puts on a freshly
+    /// written executable while it scans it (the usual cause of a failed in-place swap).</summary>
+    private static async Task MoveWithRetryAsync(string from, string to, CancellationToken ct, int attempts = 8)
+    {
+        for (int i = 0; ; i++)
+        {
+            try { File.Move(from, to); return; }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException && i < attempts)
+            {
+                await Task.Delay(750, ct);
+            }
+        }
+    }
+
+    /// <summary>Persists why a self-update failed (the dialog otherwise just swaps to the web
+    /// fallback). Writes to %AppData%\AnchorLauncher\logs\update.log so it can be diagnosed.</summary>
+    public static void LogFailure(Exception ex)
+    {
+        try
+        {
+            var dir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AnchorLauncher", "logs");
+            Directory.CreateDirectory(dir);
+            File.AppendAllText(Path.Combine(dir, "update.log"),
+                $"[{DateTime.Now:O}] self-update failed:\n{ex}\n\n");
+        }
+        catch { /* logging must never throw */ }
     }
 }

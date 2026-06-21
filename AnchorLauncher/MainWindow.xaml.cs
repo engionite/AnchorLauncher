@@ -113,7 +113,7 @@ public partial class MainWindow : Window
     private bool _updateDialogOpen;
     private System.Windows.Threading.DispatcherTimer? _updateTimer;
 
-    /// <summary>Checks for updates at startup, then keeps polling every 5 minutes so an update
+    /// <summary>Checks for updates at startup, then keeps polling every 2 minutes so an update
     /// prompt appears live while the launcher is open — no restart needed.</summary>
     private async System.Threading.Tasks.Task CheckForUpdatesOnStartupAsync()
     {
@@ -121,7 +121,7 @@ public partial class MainWindow : Window
 
         _updateTimer = new System.Windows.Threading.DispatcherTimer
         {
-            Interval = System.TimeSpan.FromMinutes(5)
+            Interval = System.TimeSpan.FromMinutes(2)
         };
         _updateTimer.Tick += async (_, _) => await CheckAndPromptUpdateAsync();
         _updateTimer.Start();
