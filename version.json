@@ -1,5 +1,5 @@
 {
-  "version": "1.0.6",
+  "version": "1.0.7",
   "url": "https://github.com/engionite/AnchorLauncher/releases/latest",
-  "notes": "v1.0.6 — Anchor now shows your activity on Discord (version + GitHub/Download buttons), prompts you live the moment a new version ships (no restart needed), and gives clear, fully translated messages when a Forge/NeoForge install fails. Plus a security & reliability audit pass."
+  "notes": "v1.0.7 — Discord Rich Presence is now LIVE: while Anchor is open it shows on your Discord profile with the version, elapsed time, and GitHub/Download buttons. Builds on v1.0.6 (truly-live update prompts with no restart, and clear, fully translated Forge/NeoForge install errors)."
 }

@@ -26,10 +26,11 @@ public sealed class DiscordRichPresenceService : IDisposable
     //   3. Under Rich Presence ▸ Art Assets, upload a 512×512 logo named exactly
     //      "anchor_logo" (matches LargeImageKey below).
     // Left empty, Rich Presence is simply disabled and the launcher behaves normally.
-    public const string ClientId = "";
+    public const string ClientId = "1518266422361591818";
 
     private const string LargeImageKey = "anchor_logo";
     private const string AppName       = "Anchor Launcher";
+    private const string Tagline       = "Premium Minecraft Launcher";
     private const string GitHubUrl     = "https://github.com/engionite/AnchorLauncher";
     private const string DownloadUrl   = "https://github.com/engionite/AnchorLauncher/releases/latest";
 
@@ -76,7 +77,7 @@ public sealed class DiscordRichPresenceService : IDisposable
 
         var activity = new
         {
-            details    = AppName,
+            details    = Tagline,
             state      = $"v{UpdateCheckService.CurrentVersion}",
             timestamps = new { start = _startedUnix },
             assets     = new { large_image = LargeImageKey, large_text = AppName },
