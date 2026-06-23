@@ -136,6 +136,95 @@ public class ModrinthClient
         }
     }
 
+    /// <summary>
+    /// Given a local jar's SHA-1, asks Modrinth for the newest version compatible with the
+    /// instance (POST /version_file/{hash}/update). Returns the new primary file's name, URL and
+    /// SHA-1, or null when the mod is unknown or already current. The caller compares the returned
+    /// SHA-1 against the input to decide whether it's actually an update.
+    /// </summary>
+    public async Task<(string FileName, string Url, string Sha1)?> GetUpdateByHashAsync(
+        string sha1, string? gameVersion, string? loader, CancellationToken ct = default)
+    {
+        try
+        {
+            var loaders = string.IsNullOrEmpty(loader)      ? "" : $"\"{loader}\"";
+            var gvs     = string.IsNullOrEmpty(gameVersion) ? "" : $"\"{gameVersion}\"";
+            var payload = $"{{\"loaders\":[{loaders}],\"game_versions\":[{gvs}]}}";
+            using var content = new StringContent(payload, System.Text.Encoding.UTF8, "application/json");
+
+            using var resp = await _http.PostAsync($"{Base}/version_file/{sha1}/update?algorithm=sha1", content, ct);
+            if (!resp.IsSuccessStatusCode) return null;
+
+            var body = await resp.Content.ReadAsStringAsync(ct);
+            using var doc = JsonDocument.Parse(body);
+            if (!doc.RootElement.TryGetProperty("files", out var files) || files.GetArrayLength() == 0)
+                return null;
+
+            var chosen = files[0];
+            foreach (var f in files.EnumerateArray())
+                if (f.TryGetProperty("primary", out var p) && p.GetBoolean()) { chosen = f; break; }
+
+            var fileName = chosen.GetProperty("filename").GetString();
+            var url      = chosen.GetProperty("url").GetString();
+            var newSha1  = chosen.TryGetProperty("hashes", out var h) && h.TryGetProperty("sha1", out var s)
+                ? s.GetString() : null;
+
+            return fileName != null && url != null && newSha1 != null ? (fileName, url, newSha1) : null;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Modrinth] update check failed: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>Required-dependency project ids of the version that best matches the instance
+    /// (used by the dependency resolver to auto-offer e.g. Fabric API). Empty on any failure.</summary>
+    public async Task<List<string>> GetRequiredDependenciesAsync(
+        string projectId, string? gameVersion, string? loader, CancellationToken ct = default)
+    {
+        var deps = new List<string>();
+        try
+        {
+            var qs = new List<string>();
+            if (!string.IsNullOrEmpty(gameVersion)) qs.Add("game_versions=" + Uri.EscapeDataString($"[\"{gameVersion}\"]"));
+            if (!string.IsNullOrEmpty(loader))      qs.Add("loaders=" + Uri.EscapeDataString($"[\"{loader}\"]"));
+            var url = qs.Count > 0 ? $"{Base}/project/{projectId}/version?{string.Join("&", qs)}"
+                                   : $"{Base}/project/{projectId}/version";
+
+            var body = await _http.GetStringAsync(url, ct);
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.ValueKind != JsonValueKind.Array || doc.RootElement.GetArrayLength() == 0)
+                return deps;
+
+            if (doc.RootElement[0].TryGetProperty("dependencies", out var arr) && arr.ValueKind == JsonValueKind.Array)
+                foreach (var d in arr.EnumerateArray())
+                {
+                    var type = d.TryGetProperty("dependency_type", out var dt) ? dt.GetString() : null;
+                    var pid  = d.TryGetProperty("project_id", out var pp) ? pp.GetString() : null;
+                    if (type == "required" && !string.IsNullOrEmpty(pid) && !deps.Contains(pid!)) deps.Add(pid!);
+                }
+        }
+        catch (Exception ex) { Debug.WriteLine($"[Modrinth] dependency lookup failed: {ex.Message}"); }
+        return deps;
+    }
+
+    /// <summary>Project title for a project id (for the dependency prompt). Null on failure.</summary>
+    public async Task<string?> GetProjectNameAsync(string projectId, CancellationToken ct = default)
+    {
+        try
+        {
+            var body = await _http.GetStringAsync($"{Base}/project/{projectId}", ct);
+            using var doc = JsonDocument.Parse(body);
+            return doc.RootElement.TryGetProperty("title", out var t) ? t.GetString() : null;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Modrinth] project name lookup failed: {ex.Message}");
+            return null;
+        }
+    }
+
     // ── Helpers ─────────────────────────────────────────────────────────────────
 
     /// <summary>Modrinth has no ascending sorts — Least/Oldest use the closest index and are

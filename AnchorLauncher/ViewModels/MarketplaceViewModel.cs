@@ -241,9 +241,10 @@ public partial class MarketplaceViewModel : ObservableObject
     private async Task InstallAsync(MarketplaceItem? item)
     {
         if (item == null || item.State == InstallState.Installing) return;
+        var loc = Services.Platform.Loc.I;
         if (SelectedInstance == null)
         {
-            StatusMessage = "Pick an instance to install into first.";
+            StatusMessage = loc["mp_pickinstance"];
             return;
         }
 
@@ -257,7 +258,7 @@ public partial class MarketplaceViewModel : ObservableObject
         try
         {
             item.State    = InstallState.Installing;
-            StatusMessage = $"Installing {item.Name}…";
+            StatusMessage = string.Format(loc["mp_installing"], item.Name);
 
             // Auto-snapshot the mods/ state before changing it (rollback safety net)
             if (item.Type == ProjectType.Mod)
@@ -265,13 +266,44 @@ public partial class MarketplaceViewModel : ObservableObject
 
             await _service.InstallAsync(item, SelectedInstance);
             item.State    = InstallState.Installed;
-            StatusMessage = $"Installed {item.Name} → {SelectedInstance.Name}";
+            StatusMessage = string.Format(loc["mp_installed"], item.Name, SelectedInstance.Name);
+
+            // Offer to install any required dependencies the mod needs to run (e.g. Fabric API).
+            await OfferDependenciesAsync(item, SelectedInstance, loc);
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"[MarketVM] InstallAsync failed: {ex}");
             item.State    = InstallState.Failed;
-            StatusMessage = $"Install failed: {ex.Message}";
+            StatusMessage = $"{loc["mp_failed"]}: {ex.Message}";
+        }
+    }
+
+    /// <summary>Resolves a just-installed mod's required Modrinth dependencies that aren't present
+    /// yet and, if any, offers to install them in one click.</summary>
+    private async Task OfferDependenciesAsync(MarketplaceItem item, MinecraftInstance instance, Services.Platform.Loc loc)
+    {
+        try
+        {
+            var missing = await _service.ResolveMissingDependenciesAsync(item, instance);
+            if (missing.Count == 0) return;
+
+            var dlg = new Views.Instances.DependencyDialog(item.Name, missing.Select(d => d.Name))
+            {
+                Owner = System.Windows.Application.Current?.MainWindow
+            };
+            if (dlg.ShowDialog() != true) return;
+
+            foreach (var dep in missing)
+            {
+                StatusMessage = string.Format(loc["mp_installing"], dep.Name);
+                await _service.InstallDependencyAsync(dep, instance);
+            }
+            StatusMessage = string.Format(loc["mp_installed"], item.Name, instance.Name);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[MarketVM] dependency offer failed: {ex}");
         }
     }
 }

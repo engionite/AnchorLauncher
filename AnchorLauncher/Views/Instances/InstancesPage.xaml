@@ -66,6 +66,20 @@
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <Button x:Name="BtnMigrate"
+                                    Style="{StaticResource GhostButtonStyle}"
+                                    Height="40" Padding="16,0" Margin="0,0,10,0"
+                                    Click="BtnMigrate_Click"
+                                    ToolTip="{Binding [mig_tip], Source={x:Static loc:Loc.I}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="M 3,8 H 15 M 11,4 L 15,8 L 11,12 M 21,16 H 9 M 13,20 L 9,16 L 13,12"
+                                          Stroke="{StaticResource TextSecondaryBrush}" StrokeThickness="1.7"
+                                          StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                          Width="15" Height="15" Stretch="Uniform"
+                                          VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="{Binding [mig_button], Source={x:Static loc:Loc.I}}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
                             <Button x:Name="BtnImport"
                                     Style="{StaticResource GhostButtonStyle}"
                                     Height="40" Padding="16,0" Margin="0,0,10,0"
@@ -178,6 +192,7 @@
                                         <MenuItem Header="{Binding [ctx_edit], Source={x:Static loc:Loc.I}}"        Click="MenuEdit_Click"/>
                                         <MenuItem Header="{Binding [ctx_seticon], Source={x:Static loc:Loc.I}}"     Click="MenuSetIcon_Click"/>
                                         <MenuItem Header="{Binding [ctx_switchver], Source={x:Static loc:Loc.I}}"   Click="MenuSwitchVersion_Click"/>
+                                        <MenuItem Header="{Binding [ctx_updatemods], Source={x:Static loc:Loc.I}}" Click="MenuUpdateMods_Click"/>
                                         <MenuItem Header="{Binding [ctx_undoswitch], Source={x:Static loc:Loc.I}}"  Click="MenuUndoSwitch_Click"
                                                   Visibility="{Binding HasSwitchSnapshot, Converter={StaticResource BoolToVis}}"/>
                                         <MenuItem Header="{Binding [ctx_clone], Source={x:Static loc:Loc.I}}"       Click="MenuClone_Click"/>

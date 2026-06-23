@@ -1,5 +1,5 @@
 {
-  "version": "1.0.9",
+  "version": "1.1.0",
   "url": "https://github.com/engionite/AnchorLauncher/releases/latest",
-  "notes": "v1.0.9 — Polish pass. The Minecraft version lists now use the clean Anchor scrollbar, the Anchor News feed scrolls instead of growing forever, and each news post opens a detailed view with a link to its GitHub release. The Discord presence also shows clearer Download / GitHub buttons."
+  "notes": "v1.1.0 — A big one for mod management. Right-click any instance → Update Mods to refresh every mod in one click (via Modrinth). Installing a mod now offers to grab its required dependencies (like Fabric API) automatically. And the new Migrate button imports your instances — worlds, mods and configs — from Prism, CurseForge, Modrinth or the official Minecraft launcher. (Accounts can't be moved, so just sign in again.)"
 }

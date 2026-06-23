@@ -236,16 +236,48 @@ public class InstanceService
         return string.IsNullOrWhiteSpace(cleaned) ? "Instance" : cleaned;
     }
 
-    private static void CopyDirectory(string sourceDir, string destDir)
+    private static void CopyDirectory(string sourceDir, string destDir, Func<string, bool>? includeRelative = null)
     {
         Directory.CreateDirectory(destDir);
 
         foreach (var file in Directory.EnumerateFiles(sourceDir, "*", SearchOption.AllDirectories))
         {
-            var rel    = Path.GetRelativePath(sourceDir, file);
+            var rel = Path.GetRelativePath(sourceDir, file);
+            if (includeRelative != null && !includeRelative(rel)) continue;
             var target = Path.Combine(destDir, rel);
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
             File.Copy(file, target, overwrite: true);
         }
+    }
+
+    /// <summary>
+    /// Imports another launcher's instance by deep-copying its game directory into a fresh Anchor
+    /// instance. <paramref name="includeRelative"/> can exclude heavy/non-portable folders — used for
+    /// the official .minecraft, which holds shared versions/libraries/assets that don't belong to one
+    /// instance.
+    /// </summary>
+    public async Task<MinecraftInstance> ImportFromGameDirAsync(
+        string sourceGameDir, string name, string version, string versionType,
+        ModLoaderType loader, string? loaderVersion, Func<string, bool>? includeRelative = null)
+    {
+        var destFolder = ReserveFolder(name);
+        await Task.Run(() => CopyDirectory(sourceGameDir, destFolder, includeRelative));
+        foreach (var sub in new[] { "mods", "saves", "config", "resourcepacks", "shaderpacks" })
+            Directory.CreateDirectory(Path.Combine(destFolder, sub));
+
+        var inst = new MinecraftInstance
+        {
+            Id               = Guid.NewGuid(),
+            Name             = name.Trim(),
+            Version          = version,
+            VersionType      = versionType,
+            ModLoader        = loader,
+            ModLoaderVersion = loaderVersion,
+            GameDir          = destFolder,
+            Created          = DateTime.UtcNow
+        };
+        await SaveAsync(inst);
+        Debug.WriteLine($"[InstanceService] Imported game dir '{sourceGameDir}' → '{inst.Name}'");
+        return inst;
     }
 }

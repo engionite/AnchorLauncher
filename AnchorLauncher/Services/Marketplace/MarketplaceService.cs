@@ -71,6 +71,50 @@ public class MarketplaceService
         return dest;
     }
 
+    // ── Dependency resolution (Modrinth) ─────────────────────────────────────────
+
+    /// <summary>A required dependency of a mod that isn't yet in the instance's mods folder.</summary>
+    public record PendingDependency(string ProjectId, string Name, string FileName, string Url);
+
+    /// <summary>
+    /// Resolves the required Modrinth dependencies of a mod (e.g. Fabric API) that aren't already
+    /// present in the instance, so the caller can offer to install them. Returns an empty list for
+    /// CurseForge items, non-mods, or when every dependency is already installed.
+    /// </summary>
+    public async Task<List<PendingDependency>> ResolveMissingDependenciesAsync(
+        MarketplaceItem item, MinecraftInstance instance, CancellationToken ct = default)
+    {
+        var missing = new List<PendingDependency>();
+        if (item.Source != ModSource.Modrinth || item.Type != ProjectType.Mod) return missing;
+
+        var loader  = LoaderName(instance.ModLoader);
+        var depIds  = await _modrinth.GetRequiredDependenciesAsync(item.ProjectId, instance.Version, loader, ct);
+        var modsDir = Path.Combine(instance.GameDir, "mods");
+
+        foreach (var depId in depIds)
+        {
+            ct.ThrowIfCancellationRequested();
+            var resolved = await _modrinth.ResolveDownloadAsync(depId, instance.Version, loader, ProjectType.Mod, ct);
+            if (resolved is not { } r) continue;
+
+            // Already installed (enabled or disabled) → nothing to offer.
+            if (File.Exists(Path.Combine(modsDir, r.FileName)) ||
+                File.Exists(Path.Combine(modsDir, r.FileName + ".disabled")))
+                continue;
+
+            var name = await _modrinth.GetProjectNameAsync(depId, ct) ?? r.FileName;
+            missing.Add(new PendingDependency(depId, name, r.FileName, r.Url));
+        }
+        return missing;
+    }
+
+    /// <summary>Downloads one resolved dependency jar into the instance's mods folder.</summary>
+    public async Task InstallDependencyAsync(PendingDependency dep, MinecraftInstance instance, CancellationToken ct = default)
+    {
+        var dest = Path.Combine(instance.GameDir, "mods", dep.FileName);
+        await DownloadHelper.DownloadFileAsync(dep.Url, dest, null, ct);
+    }
+
     // ── Mappings ────────────────────────────────────────────────────────────────
 
     private static string FolderFor(ProjectType t) => t switch

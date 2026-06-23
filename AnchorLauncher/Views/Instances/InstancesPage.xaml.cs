@@ -88,6 +88,22 @@ public partial class InstancesPage : Page
         ScrollConsoleToEnd();
     }
 
+    // ── Import from another launcher ──────────────────────────────────────────────
+
+    private async void BtnMigrate_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var dlg = new MigrationDialog { Owner = Window.GetWindow(this) };
+            if (dlg.ShowDialog() == true)
+                await _vm.LoadAsync();   // refresh to show imported instances
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[InstancesPage] Migrate failed: {ex}");
+        }
+    }
+
     // ── New instance ────────────────────────────────────────────────────────────
 
     private void BtnNewInstance_Click(object sender, RoutedEventArgs e)
@@ -172,6 +188,20 @@ public partial class InstancesPage : Page
     {
         if (InstanceFromMenu(sender) is { } inst)
             _vm.UndoSwitchCommand.Execute(inst);
+    }
+
+    private void MenuUpdateMods_Click(object sender, RoutedEventArgs e)
+    {
+        if (InstanceFromMenu(sender) is not { } inst) return;
+        try
+        {
+            var dlg = new ModUpdateDialog(inst) { Owner = Window.GetWindow(this) };
+            dlg.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[InstancesPage] Update mods failed: {ex}");
+        }
     }
 
     private void MenuClone_Click(object sender, RoutedEventArgs e)
