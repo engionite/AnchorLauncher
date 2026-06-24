@@ -1,0 +1,12 @@
+# Normalise line endings.
+* text=auto
+
+# The interface is XAML (XML-based markup) — a big part of the codebase. By default
+# GitHub's language analyser ignores .xaml, which is why the language bar reads "100% C#".
+# Classify it as XML so the stats reflect that the UI markup is actually there.
+*.xaml  linguist-language=XML  linguist-detectable=true
+
+# Don't let designer-generated code skew the stats (these live in obj/ and aren't committed,
+# but mark them anyway for safety).
+*.g.cs       linguist-generated=true
+*.g.i.cs     linguist-generated=true
