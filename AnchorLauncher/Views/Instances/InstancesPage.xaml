@@ -197,6 +197,7 @@
                                                   Visibility="{Binding HasSwitchSnapshot, Converter={StaticResource BoolToVis}}"/>
                                         <MenuItem Header="{Binding [ctx_clone], Source={x:Static loc:Loc.I}}"       Click="MenuClone_Click"/>
                                         <MenuItem Header="{Binding [ctx_export], Source={x:Static loc:Loc.I}}"      Click="MenuExport_Click"/>
+                                        <MenuItem Header="{Binding [ctx_exportpack], Source={x:Static loc:Loc.I}}"  Click="MenuExportPack_Click"/>
                                         <MenuItem Header="{Binding [ctx_delete], Source={x:Static loc:Loc.I}}"      Click="MenuDelete_Click"/>
                                     </ContextMenu>
                                 </Border.ContextMenu>

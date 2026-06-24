@@ -230,6 +230,26 @@ public partial class InstancesPage : Page
         }
     }
 
+    private void MenuExportPack_Click(object sender, RoutedEventArgs e)
+    {
+        if (InstanceFromMenu(sender) is not { } inst) return;
+        try
+        {
+            var dlg = new SaveFileDialog
+            {
+                Title    = "Export modpack",
+                Filter   = "Modrinth modpack (*.mrpack)|*.mrpack",
+                FileName = inst.Name + ".mrpack"
+            };
+            if (dlg.ShowDialog() == true)
+                new ExportModpackDialog(inst, dlg.FileName) { Owner = Window.GetWindow(this) }.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[InstancesPage] Export modpack failed: {ex}");
+        }
+    }
+
     private async void MenuDelete_Click(object sender, RoutedEventArgs e)
     {
         if (InstanceFromMenu(sender) is not { } inst) return;

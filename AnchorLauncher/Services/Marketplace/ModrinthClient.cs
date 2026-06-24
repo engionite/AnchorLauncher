@@ -225,6 +225,37 @@ public class ModrinthClient
         }
     }
 
+    /// <summary>Resolves a local jar's SHA-1 to its Modrinth CDN file (url + hashes + size) so a
+    /// .mrpack export can reference it as a download instead of bundling it. Null when unknown.</summary>
+    public async Task<(string FileName, string Url, string Sha1, string Sha512, long FileSize)?> GetFileByHashAsync(
+        string sha1, CancellationToken ct = default)
+    {
+        try
+        {
+            var body = await _http.GetStringAsync($"{Base}/version_file/{sha1}?algorithm=sha1", ct);
+            using var doc = JsonDocument.Parse(body);
+            if (!doc.RootElement.TryGetProperty("files", out var files)) return null;
+
+            foreach (var f in files.EnumerateArray())
+            {
+                if (!f.TryGetProperty("hashes", out var h)) continue;
+                var fileSha1 = h.TryGetProperty("sha1", out var s1) ? s1.GetString() : null;
+                if (!string.Equals(fileSha1, sha1, StringComparison.OrdinalIgnoreCase)) continue;
+
+                var url    = f.GetProperty("url").GetString();
+                var name   = f.GetProperty("filename").GetString();
+                var sha512 = h.TryGetProperty("sha512", out var s5) ? s5.GetString() : null;
+                var size   = f.TryGetProperty("size", out var sz) ? sz.GetInt64() : 0;
+
+                if (url != null && name != null && sha512 != null)
+                    return (name, url, sha1, sha512, size);
+            }
+            return null;
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound) { return null; }
+        catch (Exception ex) { Debug.WriteLine($"[Modrinth] file-by-hash failed: {ex.Message}"); return null; }
+    }
+
     // ── Helpers ─────────────────────────────────────────────────────────────────
 
     /// <summary>Modrinth has no ascending sorts — Least/Oldest use the closest index and are

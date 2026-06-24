@@ -156,8 +156,8 @@ public partial class App : Application
         }
     }
 
-    // true  → go straight to MainWindow (valid token, or no account = offline user)
-    // false → show LoginWindow (active account exists but token is expired)
+    // true  → go straight to MainWindow (valid token, silently refreshed token, or offline)
+    // false → show LoginWindow (active account whose session genuinely can't be refreshed while online)
     private static async Task<bool> ShouldSkipLoginAsync()
     {
         try
@@ -168,23 +168,62 @@ public partial class App : Application
             if (store?.ActiveAccountId == null) return true;
 
             var id = store.ActiveAccountId.Value;
-            ILauncherAccount? account = null;
-
-            if (store.ActiveAccountType == AccountType.Microsoft)
-                account = store.MicrosoftAccounts.Find(a => a.Id == id);
-            else if (store.ActiveAccountType == AccountType.ElyBy)
-                account = store.ElyAccounts.Find(a => a.Id == id);
+            ILauncherAccount? account = store.ActiveAccountType switch
+            {
+                AccountType.Microsoft => store.MicrosoftAccounts.Find(a => a.Id == id),
+                AccountType.ElyBy     => store.ElyAccounts.Find(a => a.Id == id),
+                _                     => null
+            };
 
             // Account record missing (store inconsistency) = don't block the user
             if (account == null) return true;
 
-            // Token still valid → MainWindow directly
-            return account.TokenExpiry > DateTime.UtcNow;
+            // Token still comfortably valid → MainWindow directly
+            if (account.TokenExpiry > DateTime.UtcNow.AddMinutes(5)) return true;
+
+            // Expired → silently refresh so the user is NOT logged out on open. The short-lived
+            // game token expires in ~24h, but the refresh token lives for weeks; this was the
+            // "sometimes it logs me out" bug — startup simply never attempted the refresh.
+            if (await TryRefreshActiveAsync(store, account)) return true;
+
+            // Refresh failed: only fall back to the sign-in screen when we're actually online (a
+            // genuine auth failure). Offline / transient network → keep the user signed in.
+            return !System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable();
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"[App] ShouldSkipLoginAsync failed: {ex}");
             return true; // On any error, don't block the user
         }
+    }
+
+    /// <summary>Best-effort silent token refresh for the active account; persists the fresh token
+    /// on success. Returns false when the session can't be refreshed (caller decides what to do).</summary>
+    private static async Task<bool> TryRefreshActiveAsync(AccountsStore store, ILauncherAccount account)
+    {
+        try
+        {
+            if (account is MicrosoftAccount ms)
+            {
+                var fresh = await new MicrosoftAuthService().TrySilentRefreshAsync(ms);
+                if (fresh == null) return false;
+                fresh.Id = ms.Id;   // keep the same account identity in the store
+                var i = store.MicrosoftAccounts.FindIndex(a => a.Id == ms.Id);
+                if (i >= 0) store.MicrosoftAccounts[i] = fresh;
+                await TokenVaultService.SaveAccountsAsync(store);
+                Debug.WriteLine("[App] Microsoft token silently refreshed on startup.");
+                return true;
+            }
+            if (account is ElyAccount ely)
+            {
+                var fresh = await new ElyAuthService().TryRefreshAsync(ely);
+                if (fresh == null) return false;
+                await TokenVaultService.SaveAccountsAsync(store);   // ely refreshed in place
+                Debug.WriteLine("[App] Ely.by token refreshed on startup.");
+                return true;
+            }
+        }
+        catch (Exception ex) { Debug.WriteLine($"[App] TryRefreshActiveAsync failed: {ex.Message}"); }
+        return false;
     }
 }

@@ -88,14 +88,25 @@ public class MarketplaceService
         if (item.Source != ModSource.Modrinth || item.Type != ProjectType.Mod) return missing;
 
         var loader  = LoaderName(instance.ModLoader);
-        var depIds  = await _modrinth.GetRequiredDependenciesAsync(item.ProjectId, instance.Version, loader, ct);
         var modsDir = Path.Combine(instance.GameDir, "mods");
 
-        foreach (var depId in depIds)
+        // Walk the dependency graph breadth-first (transitive: deps of deps, e.g. a mod needs
+        // Architectury which needs Cloth Config). The 'seen' set dedups and breaks cycles.
+        var seen  = new HashSet<string> { item.ProjectId };
+        var queue = new Queue<string>();
+        foreach (var d in await _modrinth.GetRequiredDependenciesAsync(item.ProjectId, instance.Version, loader, ct))
+            if (seen.Add(d)) queue.Enqueue(d);
+
+        while (queue.Count > 0)
         {
             ct.ThrowIfCancellationRequested();
+            var depId    = queue.Dequeue();
             var resolved = await _modrinth.ResolveDownloadAsync(depId, instance.Version, loader, ProjectType.Mod, ct);
             if (resolved is not { } r) continue;
+
+            // Pull in this dependency's own required dependencies too.
+            foreach (var sub in await _modrinth.GetRequiredDependenciesAsync(depId, instance.Version, loader, ct))
+                if (seen.Add(sub)) queue.Enqueue(sub);
 
             // Already installed (enabled or disabled) → nothing to offer.
             if (File.Exists(Path.Combine(modsDir, r.FileName)) ||

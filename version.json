@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "url": "https://github.com/engionite/AnchorLauncher/releases/latest",
-  "notes": "v1.1.0 — A big one for mod management. Right-click any instance → Update Mods to refresh every mod in one click (via Modrinth). Installing a mod now offers to grab its required dependencies (like Fabric API) automatically. And the new Migrate button imports your instances — worlds, mods and configs — from Prism, CurseForge, Modrinth or the official Minecraft launcher. (Accounts can't be moved, so just sign in again.)"
+  "notes": "v1.2.0 — Creator tools + a stay-signed-in fix. Export any instance to a shareable .mrpack (right-click an instance → Export as Modpack). Before upgrading Minecraft versions, check which mods are ready (Switch Version → Check Mod Compatibility). Installing a mod now also pulls in its dependencies' dependencies. And the launcher no longer randomly logs you out between sessions — it silently refreshes your session on startup instead of dropping you at the login screen."
 }
