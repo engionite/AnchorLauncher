@@ -66,6 +66,26 @@
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <Button x:Name="BtnDedup"
+                                    Style="{StaticResource GhostButtonStyle}"
+                                    Height="40" Width="40" Padding="0" Margin="0,0,10,0"
+                                    Click="BtnDedup_Click"
+                                    ToolTip="{Binding [dd_tip], Source={x:Static loc:Loc.I}}">
+                                <Path Data="M 4,7 C 4,5.3 7.6,4 12,4 C 16.4,4 20,5.3 20,7 C 20,8.7 16.4,10 12,10 C 7.6,10 4,8.7 4,7 Z M 4,7 V 17 C 4,18.7 7.6,20 12,20 C 16.4,20 20,18.7 20,17 V 7 M 4,12 C 4,13.7 7.6,15 12,15 C 16.4,15 20,13.7 20,12"
+                                      Stroke="{StaticResource TextSecondaryBrush}" StrokeThickness="1.5"
+                                      StrokeLineJoin="Round" Width="15" Height="15" Stretch="Uniform"
+                                      VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </Button>
+                            <Button x:Name="BtnP2P"
+                                    Style="{StaticResource GhostButtonStyle}"
+                                    Height="40" Width="40" Padding="0" Margin="0,0,10,0"
+                                    Click="BtnP2P_Click"
+                                    ToolTip="{Binding [p2p_tip], Source={x:Static loc:Loc.I}}">
+                                <Path Data="M 12,17 m -1,0 a 1,1 0 1,0 2,0 a 1,1 0 1,0 -2,0 M 8.5,13.5 a 5,5 0 0 1 7,0 M 5.5,10.5 a 9,9 0 0 1 13,0"
+                                      Stroke="{StaticResource TextSecondaryBrush}" StrokeThickness="1.5"
+                                      StrokeLineJoin="Round" StrokeEndLineCap="Round" Width="16" Height="16" Stretch="Uniform"
+                                      VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </Button>
                             <Button x:Name="BtnMigrate"
                                     Style="{StaticResource GhostButtonStyle}"
                                     Height="40" Padding="16,0" Margin="0,0,10,0"

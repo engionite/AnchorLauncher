@@ -16,7 +16,7 @@ public class UpdateCheckResult
 /// <summary>Compares the running version against a hosted version.json feed.</summary>
 public class UpdateCheckService
 {
-    public const string CurrentVersion = "1.2.0";
+    public const string CurrentVersion = "1.3.0";
     private const string VersionUrl = "https://engionite.github.io/AnchorLauncher/version.json";
 
     private static readonly HttpClient _http = new()

@@ -1,5 +1,5 @@
 {
-  "version": "1.2.0",
+  "version": "1.3.0",
   "url": "https://github.com/engionite/AnchorLauncher/releases/latest",
-  "notes": "v1.2.0 — Creator tools + a stay-signed-in fix. Export any instance to a shareable .mrpack (right-click an instance → Export as Modpack). Before upgrading Minecraft versions, check which mods are ready (Switch Version → Check Mod Compatibility). Installing a mod now also pulls in its dependencies' dependencies. And the launcher no longer randomly logs you out between sessions — it silently refreshes your session on startup instead of dropping you at the login screen."
+  "notes": "v1.3.0 — Two big ones. Reclaim Storage: de-duplicate the mods, shaders and resource packs shared across your instances (hard-linked to a single copy) to free gigabytes — the disk icon on the Instances page. Play with a Friend: open your world to LAN in Minecraft, click Host, and Anchor forwards the port through your router (UPnP) so a friend joins over the internet with Direct Connection — no server, no account, nothing in the middle. Works wherever your router allows UPnP."
 }

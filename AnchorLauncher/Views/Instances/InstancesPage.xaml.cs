@@ -104,6 +104,18 @@ public partial class InstancesPage : Page
         }
     }
 
+    private void BtnDedup_Click(object sender, RoutedEventArgs e)
+    {
+        try { new DedupDialog { Owner = Window.GetWindow(this) }.ShowDialog(); }
+        catch (Exception ex) { Debug.WriteLine($"[InstancesPage] Dedup failed: {ex}"); }
+    }
+
+    private void BtnP2P_Click(object sender, RoutedEventArgs e)
+    {
+        try { new P2PDialog { Owner = Window.GetWindow(this) }.ShowDialog(); }
+        catch (Exception ex) { Debug.WriteLine($"[InstancesPage] P2P failed: {ex}"); }
+    }
+
     // ── New instance ────────────────────────────────────────────────────────────
 
     private void BtnNewInstance_Click(object sender, RoutedEventArgs e)
