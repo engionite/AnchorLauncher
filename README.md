@@ -11,10 +11,11 @@
 
 </div>
 
-Anchor is a desktop launcher for **Minecraft: Java Edition** on Windows. It takes care of the tedious
-parts — accounts, versions, mod loaders, downloads — and then keeps going into the parts most launchers
-leave out: Ely.by accounts, custom skins that actually render on offline servers, one search box for two
-mod sites, and a whole interface that speaks your language.
+Anchor is a desktop launcher for **Minecraft: Java Edition** on Windows (and it'll launch **Bedrock** for you
+too). It takes care of the tedious parts — accounts, versions, mod loaders, downloads — and then keeps going
+into the parts most launchers leave out: Ely.by accounts, custom skins that render on offline servers, one
+search box for two mod sites, **one-click mod updates**, **modpack export**, importing your whole setup
+straight from other launchers, and an interface that speaks your language.
 
 It's free. This is the source.
 
@@ -37,9 +38,24 @@ track playtime, grid or list — your call.
 
 **One marketplace, both worlds**
 Search **Modrinth and CurseForge from the same box**. One-click install into any instance, with results
-filtered to what's actually compatible. Before a modded world launches, Anchor scans for mod conflicts and
-offers to fix them. And if you've already got a pack, **import a Modrinth `.mrpack`** and it builds the whole
-instance for you — right loader, right mods, configs and all.
+filtered to what's actually compatible. Install a mod that needs **Fabric API** (or Cloth Config, or
+Architectury) and Anchor offers to pull in those dependencies — and their dependencies — automatically.
+Before a modded world launches, it scans for mod conflicts and offers to fix them.
+
+**Mods that stay current**
+**Update every mod in one click** — Anchor identifies what you have by file hash, finds newer compatible
+builds on Modrinth, and swaps them in. Thinking about jumping to a new Minecraft version? **Check first**
+which of your mods are already ready and which ones are holding you back.
+
+**Build packs, and bring your own**
+**Export any instance to a Modrinth `.mrpack`** in one click — your mods become tidy download links and your
+configs ride along — ready to share. Already have a pack? **Import a `.mrpack`** and Anchor builds the whole
+instance for you: right loader, right mods, configs and all.
+
+**Switch in from another launcher**
+Moving over from somewhere else? The **Migrate** button scans your PC for **Prism, PolyMC, MultiMC,
+CurseForge, Modrinth and the official launcher** and imports the instances you pick — worlds, mods and
+configs included.
 
 **Skins worth showing off**
 Preview your skin in **real 3D** (drag to spin it), pick a free one from a built-in gallery, or upload your
@@ -55,6 +71,16 @@ offers a **one-click fix** (out of memory → more RAM, wrong Java → grab the 
 The interface is fully translated into **15 languages** and switches **instantly**, no restart:
 English · Español · Русский · Українська · 中文 · Eesti · Deutsch · Français · Português · 日本語 · 한국어 ·
 Polski · Italiano · Nederlands · Türkçe.
+
+**Both editions, one launcher**
+It's here mainly for Java, but Anchor will **launch Bedrock Edition** too — it detects the install and points
+you to the Store if you don't have it yet. (Bedrock is a launch hand-off; the Java mod tools above are
+Java-only, because Bedrock simply doesn't use Forge/Fabric `.jar` mods.)
+
+**Shows up, stays signed in, updates itself**
+Anchor puts a **Discord Rich Presence** card on your profile while you play, **updates itself in-app** the
+moment a new version ships (no reinstalling from GitHub), and **remembers your session** so it stops randomly
+asking you to log back in.
 
 **The small stuff**
 OLED-black theme, UI scaling, system-tray, "start with Windows," cloud backup of your worlds and screenshots
@@ -72,6 +98,10 @@ Plenty of launchers do accounts, versions and mods. Here's what Anchor does that
 | **Ely.by accounts** | rarely | first-class, next to Microsoft |
 | **Custom skins on offline servers** | no | yes |
 | **Modrinth + CurseForge** | pick one | both, one search |
+| **Update all mods** | hunt them down | one click, hash-matched |
+| **Dependencies (Fabric API…)** | go find them | offered automatically |
+| **Import from other launchers** | manual folder digging | scans Prism/CF/Modrinth/official |
+| **Export a modpack** | rarely | one-click `.mrpack` |
 | **Per-instance icons** | a few presets | full set **+ your own image** |
 | **Crash help** | "here's the log" | reads it and offers a fix |
 | **Languages** | a couple | **15, live-switchable** |
