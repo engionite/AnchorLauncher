@@ -236,18 +236,48 @@ public class InstanceService
         return string.IsNullOrWhiteSpace(cleaned) ? "Instance" : cleaned;
     }
 
-    private static void CopyDirectory(string sourceDir, string destDir, Func<string, bool>? includeRelative = null)
+    private static void CopyDirectory(string sourceDir, string destDir, Func<string, bool>? includeRelative = null,
+        IProgress<DownloadProgress>? progress = null, CancellationToken ct = default)
     {
-        Directory.CreateDirectory(destDir);
+        // Gather the file list first (skipping reparse points), so we can report real progress and
+        // never recurse into a junction/symlink loop — CurseForge and Modrinth instances use those.
+        var files = new List<string>();
+        CollectFiles(sourceDir, files, ct);
 
-        foreach (var file in Directory.EnumerateFiles(sourceDir, "*", SearchOption.AllDirectories))
+        Directory.CreateDirectory(destDir);
+        for (int i = 0; i < files.Count; i++)
         {
-            var rel = Path.GetRelativePath(sourceDir, file);
+            ct.ThrowIfCancellationRequested();
+            var rel = Path.GetRelativePath(sourceDir, files[i]);
             if (includeRelative != null && !includeRelative(rel)) continue;
-            var target = Path.Combine(destDir, rel);
-            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            File.Copy(file, target, overwrite: true);
+            progress?.Report(DownloadProgress.At(100.0 * i / Math.Max(1, files.Count), rel));
+            try
+            {
+                var target = Path.Combine(destDir, rel);
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                File.Copy(files[i], target, overwrite: true);
+            }
+            catch (Exception ex) { Debug.WriteLine($"[InstanceService] copy skipped '{rel}': {ex.Message}"); }
         }
+    }
+
+    /// <summary>Recursively lists files under <paramref name="dir"/>, never following reparse points
+    /// (junctions/symlinks) and tolerating per-folder access errors. Avoids the infinite loop that
+    /// made imports hang when a source instance contained junctions.</summary>
+    private static void CollectFiles(string dir, List<string> into, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        try
+        {
+            foreach (var f in Directory.EnumerateFiles(dir)) into.Add(f);
+            foreach (var sub in Directory.EnumerateDirectories(dir))
+            {
+                try { if ((File.GetAttributes(sub) & FileAttributes.ReparsePoint) != 0) continue; }
+                catch { continue; }
+                CollectFiles(sub, into, ct);
+            }
+        }
+        catch (Exception ex) { Debug.WriteLine($"[InstanceService] enumerate skipped '{dir}': {ex.Message}"); }
     }
 
     /// <summary>
@@ -258,10 +288,11 @@ public class InstanceService
     /// </summary>
     public async Task<MinecraftInstance> ImportFromGameDirAsync(
         string sourceGameDir, string name, string version, string versionType,
-        ModLoaderType loader, string? loaderVersion, Func<string, bool>? includeRelative = null)
+        ModLoaderType loader, string? loaderVersion, Func<string, bool>? includeRelative = null,
+        IProgress<DownloadProgress>? progress = null, CancellationToken ct = default)
     {
         var destFolder = ReserveFolder(name);
-        await Task.Run(() => CopyDirectory(sourceGameDir, destFolder, includeRelative));
+        await Task.Run(() => CopyDirectory(sourceGameDir, destFolder, includeRelative, progress, ct), ct);
         foreach (var sub in new[] { "mods", "saves", "config", "resourcepacks", "shaderpacks" })
             Directory.CreateDirectory(Path.Combine(destFolder, sub));
 

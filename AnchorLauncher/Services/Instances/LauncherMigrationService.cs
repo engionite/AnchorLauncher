@@ -65,7 +65,7 @@ public class LauncherMigrationService
 
         ct.ThrowIfCancellationRequested();
         var inst = await _instances.ImportFromGameDirAsync(
-            d.GameDir, $"{d.Name} ({d.Launcher})", version, d.VersionType, d.Loader, null, filter);
+            d.GameDir, $"{d.Name} ({d.Launcher})", version, d.VersionType, d.Loader, null, filter, progress, ct);
 
         progress?.Report(DownloadProgress.At(100, d.Name));
         return inst;
@@ -76,8 +76,10 @@ public class LauncherMigrationService
         if (_latestRelease != null) return _latestRelease;
         try
         {
-            var m = await _manifest.GetManifestAsync();
-            _latestRelease = m?.Versions.FirstOrDefault(v => v.IsRelease)?.Id;
+            // Cap the manifest fetch so a slow/blocked network can never hang the whole import.
+            var task = _manifest.GetManifestAsync();
+            if (await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(8))) == task)
+                _latestRelease = (await task)?.Versions.FirstOrDefault(v => v.IsRelease)?.Id;
         }
         catch (Exception ex) { Debug.WriteLine($"[Migrate] latest release: {ex.Message}"); }
         return _latestRelease;

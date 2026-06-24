@@ -1,5 +1,5 @@
 {
-  "version": "1.3.0",
+  "version": "1.3.1",
   "url": "https://github.com/engionite/AnchorLauncher/releases/latest",
-  "notes": "v1.3.0 — Two big ones. Reclaim Storage: de-duplicate the mods, shaders and resource packs shared across your instances (hard-linked to a single copy) to free gigabytes — the disk icon on the Instances page. Play with a Friend: open your world to LAN in Minecraft, click Host, and Anchor forwards the port through your router (UPnP) so a friend joins over the internet with Direct Connection — no server, no account, nothing in the middle. Works wherever your router allows UPnP."
+  "notes": "v1.3.1 — Fixes from real testing. In-app updates now apply from a helper that runs after the launcher closes, so antivirus can't block the file swap mid-update (the 'download it from GitHub' fallback should be rare now). Importing from another launcher no longer hangs — it skips junction loops, tolerates locked files, shows real progress, and hides the Import button while it works. And Play with a Friend now lets you type a port (for dedicated servers, or when Open-to-LAN isn't auto-detected) with clear status at each step."
 }

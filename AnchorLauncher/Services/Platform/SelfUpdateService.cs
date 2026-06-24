@@ -16,7 +16,6 @@ public static class SelfUpdateService
     public const string DownloadUrl =
         "https://github.com/engionite/AnchorLauncher/releases/latest/download/AnchorLauncher.exe";
 
-    private const string OldName = "AnchorLauncher.old.exe";
     private const string NewName = "AnchorLauncher.new.exe";
 
     private static readonly HttpClient _http = new() { Timeout = TimeSpan.FromMinutes(20) };
@@ -59,9 +58,12 @@ public static class SelfUpdateService
             var exe = Environment.ProcessPath;
             if (string.IsNullOrEmpty(exe)) return;
             var dir = Path.GetDirectoryName(exe)!;
-            // Remove any leftover predecessor(s): the canonical *.old.exe and any unique-named fallbacks.
+            // Remove leftovers: predecessors from the older rename-based updater, plus a stray *.new.exe
+            // if a previous update script didn't finish cleaning up.
             foreach (var stale in Directory.EnumerateFiles(dir, "AnchorLauncher.old*.exe"))
                 try { File.Delete(stale); } catch { /* still exiting; cleaned on a later launch */ }
+            var leftover = Path.Combine(dir, NewName);
+            if (File.Exists(leftover)) try { File.Delete(leftover); } catch { }
         }
         catch (Exception ex) { Debug.WriteLine($"[SelfUpdate] FinishPendingUpdate skipped: {ex.Message}"); }
     }
@@ -76,7 +78,6 @@ public static class SelfUpdateService
         var exe = Environment.ProcessPath ?? throw new InvalidOperationException("Unknown process path.");
         var dir = Path.GetDirectoryName(exe)!;
         var newExe = Path.Combine(dir, NewName);
-        var oldExe = Path.Combine(dir, OldName);
 
         // 1. Download to a side file with progress (retry once on a transient network failure).
         for (int attempt = 1; ; attempt++)
@@ -119,32 +120,39 @@ public static class SelfUpdateService
         }
         progress.Report(100);
 
-        // 3. Swap by rename (a running exe can be renamed, not overwritten). Each move is retried
-        //    with backoff: a freshly-written unsigned exe is routinely locked for a few seconds by
-        //    antivirus real-time scanning, which is what makes an immediate single-shot move fail.
-        if (File.Exists(oldExe)) TryDelete(oldExe);
-        if (File.Exists(oldExe))            // still locked → step the running exe aside under a unique name
-            oldExe = Path.Combine(dir, $"AnchorLauncher.old.{Environment.ProcessId}.exe");
+        // 3. Hand the actual swap to a tiny detached script that runs AFTER we exit. Replacing the
+        //    file while this process is alive is exactly what antivirus blocks — it locks the freshly
+        //    written exe and/or the running image, which is why the in-process move failed on some PCs
+        //    and fell back to "download it yourself". A separate process, once we're gone, just works:
+        //    it waits for our PID to disappear, overwrites the exe (retrying for up to ~2 min in case
+        //    AV is still scanning), relaunches, and deletes itself.
+        var pid    = Environment.ProcessId;
+        var script = Path.Combine(Path.GetTempPath(), $"anchor_update_{pid}.cmd");
+        var batch =
+            "@echo off\r\n" +
+            ":waitloop\r\n" +
+            $"tasklist /fi \"PID eq {pid}\" /nh 2>nul | find /i \"AnchorLauncher\" >nul\r\n" +
+            "if not errorlevel 1 ( ping -n 2 127.0.0.1 >nul & goto waitloop )\r\n" +
+            "for /l %%i in (1,1,60) do (\r\n" +
+            $"  move /y \"{newExe}\" \"{exe}\" >nul 2>&1\r\n" +
+            $"  if not exist \"{newExe}\" goto launch\r\n" +
+            "  ping -n 2 127.0.0.1 >nul\r\n" +
+            ")\r\n" +
+            ":launch\r\n" +
+            $"start \"\" /d \"{dir}\" \"{exe}\"\r\n" +
+            $"del \"{newExe}\" >nul 2>&1\r\n" +
+            "del \"%~f0\" >nul 2>&1\r\n";
+        await File.WriteAllTextAsync(script, batch, ct);
 
-        await MoveWithRetryAsync(exe, oldExe, ct);
-        try
+        Process.Start(new ProcessStartInfo
         {
-            await MoveWithRetryAsync(newExe, exe, ct);
-        }
-        catch
-        {
-            try { File.Move(oldExe, exe); } catch { /* best-effort revert */ }
-            throw;
-        }
-
-        // 4. Launch the freshly-installed build, handing it our PID so it can close us — this
-        //    guarantees a single launcher even if our own exit is delayed. Caller also exits.
-        Process.Start(new ProcessStartInfo(exe)
-        {
-            UseShellExecute = true,
-            WorkingDirectory = dir,
-            Arguments = $"--replaced-pid {Environment.ProcessId}"
+            FileName        = "cmd.exe",
+            Arguments       = $"/c \"\"{script}\"\"",
+            UseShellExecute = false,
+            CreateNoWindow  = true,
+            WorkingDirectory = Path.GetTempPath()
         });
+        // The caller now exits; the script takes over the moment we're gone.
     }
 
     private static bool LooksLikeExe(string path)
@@ -160,20 +168,6 @@ public static class SelfUpdateService
     private static void TryDelete(string path)
     {
         try { if (File.Exists(path)) File.Delete(path); } catch { }
-    }
-
-    /// <summary>File.Move with backoff — tolerates the transient lock antivirus puts on a freshly
-    /// written executable while it scans it (the usual cause of a failed in-place swap).</summary>
-    private static async Task MoveWithRetryAsync(string from, string to, CancellationToken ct, int attempts = 8)
-    {
-        for (int i = 0; ; i++)
-        {
-            try { File.Move(from, to); return; }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException && i < attempts)
-            {
-                await Task.Delay(750, ct);
-            }
-        }
     }
 
     /// <summary>Persists why a self-update failed (the dialog otherwise just swaps to the web

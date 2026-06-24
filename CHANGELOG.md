@@ -3,6 +3,12 @@
 Every release of Anchor Launcher, newest first. Dates are when each version shipped.
 Anchor updates itself in-app, so you're usually already on the latest one.
 
+## 1.3.1 — 24 June 2026
+
+- **Self-update is much more reliable.** The file swap now happens from a small helper that runs after the launcher has closed, so antivirus can't lock the new build mid-update. The "couldn't update, download it from GitHub" fallback should be rare from here on.
+- **Fixed the import-from-another-launcher hang.** It no longer follows junction or symlink loops (CurseForge and Modrinth use those), tolerates files it can't read, and shows real per-file progress. The Import button hides while it's working.
+- **Play with a Friend now works with dedicated servers too.** You can type the port directly — it's auto-filled when an Open-to-LAN world is detected — and every step shows clear status. The Host button hides while connecting so it can't be triggered twice.
+
 ## 1.3.0 — 24 June 2026
 
 - **Reclaim Storage.** A new tool behind the disk icon on the Instances page. It finds the mods, shaders and resource packs that several instances share and keeps just one copy of each on disk, linking the rest to it. Ten instances running the same 500 MB shaderpack go from 5 GB down to 500 MB. It only ever touches downloaded content — your configs, worlds and options are never linked.

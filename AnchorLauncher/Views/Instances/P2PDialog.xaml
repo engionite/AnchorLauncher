@@ -4,7 +4,7 @@
         xmlns:loc="clr-namespace:AnchorLauncher.Services.Platform"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ResizeMode="NoResize" WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
-        SizeToContent="Manual" Width="490" Height="400"
+        SizeToContent="Manual" Width="490" Height="430"
         TextOptions.TextFormattingMode="Display" TextOptions.TextRenderingMode="ClearType">
 
     <Border CornerRadius="14" Background="{StaticResource AppBackgroundBrush}"
@@ -31,8 +31,20 @@
                            FontFamily="{StaticResource PrimaryFont}" FontSize="12.5" LineHeight="18"
                            Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,8,0,0"/>
 
-                <TextBlock x:Name="StatusText" FontFamily="{StaticResource PrimaryFont}" FontSize="13.5"
-                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,16,0,0" TextWrapping="Wrap"/>
+                <StackPanel Orientation="Horizontal" Margin="0,14,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding [p2p_portlabel], Source={x:Static loc:Loc.I}}"
+                               FontFamily="{StaticResource PrimaryFont}" FontSize="13" VerticalAlignment="Center"
+                               Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,10,0"/>
+                    <Border Background="{StaticResource Surface1Brush}" BorderBrush="{StaticResource Surface2Brush}"
+                            BorderThickness="1" CornerRadius="6">
+                        <TextBox x:Name="PortBox" Width="110" Background="Transparent" BorderThickness="0"
+                                 Padding="10,6" MaxLength="5" Foreground="{StaticResource TextPrimaryBrush}"
+                                 CaretBrush="{StaticResource AccentBrush}" FontFamily="Consolas" FontSize="14"/>
+                    </Border>
+                </StackPanel>
+
+                <TextBlock x:Name="StatusText" FontFamily="{StaticResource PrimaryFont}" FontSize="13"
+                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,14,0,0" TextWrapping="Wrap"/>
 
                 <Border x:Name="AddressPanel" Background="{StaticResource Surface1Brush}" CornerRadius="8"
                         Margin="0,12,0,0" Padding="14,12" Visibility="Collapsed">

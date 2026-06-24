@@ -49,7 +49,7 @@ public partial class MigrationDialog : Window
         var selected = _found.Where(f => f.IsSelected).ToList();
         if (selected.Count == 0) { Close(); return; }
 
-        ImportButton.IsEnabled   = false;
+        ImportButton.Visibility  = Visibility.Collapsed;
         ListContainer.Visibility = Visibility.Collapsed;
         StatusText.Text          = Loc.I["mig_importing"];
         ProgressPanel.Visibility = Visibility.Visible;
